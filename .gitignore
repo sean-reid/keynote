@@ -4,6 +4,10 @@ dist/
 .wrangler/
 .dev.vars
 
+# Audio pipeline output + downloaded Piper models
+audio-out/
+data/.piper-models/
+
 # Test + tooling output
 coverage/
 playwright-report/
