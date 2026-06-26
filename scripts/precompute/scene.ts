@@ -52,7 +52,12 @@ export function buildScene(
   unitMs: number,
   outDir: string,
 ): SceneManifest {
-  const scene = engine.generateScene(sceneIndex, unitMs);
+  // Generate a surplus of phrases: Piper speaks faster than the engine's nominal
+  // word rate, so the budget must be padded to fill the speaking window in REAL
+  // time. The loop below stops at the real speaking limit, so the extra phrases
+  // are never synthesized; they just prevent the scene from ending early (which
+  // left a long silent gap before the next speaker).
+  const scene = engine.generateScene(sceneIndex, Math.round(unitMs * 2));
   const tmp = mkdtempSync(join(tmpdir(), `kn-scene-${sceneIndex}-`));
   const applauseRng = new Rng(`${seed}|applause|${sceneIndex}`);
   const parts: string[] = [];
