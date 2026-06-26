@@ -6,8 +6,7 @@
 import { mkdirSync } from "node:fs";
 import { loadCorpusFromDisk } from "../../src/grammar/corpus.node.ts";
 import { SpeechEngine } from "../../src/grammar/engine.ts";
-import { SPEAKING_MS } from "../../src/grammar/config.ts";
-import { BROADCAST_SEED } from "../../src/sync/clock.ts";
+import { BROADCAST_SEED, speakingMsForScene } from "../../src/sync/clock.ts";
 import { buildScene } from "./scene.ts";
 
 function arg(name: string, fallback: string): string {
@@ -18,13 +17,16 @@ function arg(name: string, fallback: string): string {
 const from = Number(arg("from", "0"));
 const to = Number(arg("to", String(from)));
 const seed = arg("seed", BROADCAST_SEED);
-const budgetMs = Number(arg("budget", String(SPEAKING_MS)));
+// Each scene's budget matches the broadcast clock so the audio fits its unit;
+// --budget overrides for quick local runs.
+const budgetOverride = process.argv.includes("--budget") ? Number(arg("budget", "0")) : null;
 const outDir = arg("out", "audio-out");
 
 mkdirSync(outDir, { recursive: true });
 const engine = new SpeechEngine(loadCorpusFromDisk(), seed);
 
 for (let scene = from; scene <= to; scene++) {
+  const budgetMs = budgetOverride ?? speakingMsForScene(scene);
   const manifest = buildScene(engine, scene, seed, budgetMs, outDir);
   const speechSegments = manifest.segments.filter((s) => s.kind === "speech").length;
   process.stdout.write(
