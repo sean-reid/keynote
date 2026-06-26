@@ -78,6 +78,36 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         if: ${{ env.AWS_ACCESS_KEY_ID != '' }}
         run: |
+          # Scene files are immutable; the catalog index is written once, by the
+          # finalize job, from the full bucket contents.
           aws s3 cp audio-out "s3://$R2_BUCKET/audio" --recursive \
+            --exclude "index.json" \
             --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" \
             --cache-control "public, max-age=31536000, immutable"
+
+  finalize:
+    needs: generate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish catalog index
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        if: ${{ env.AWS_ACCESS_KEY_ID != '' }}
+        run: |
+          # Derive the live window from everything currently in the bucket, so the
+          # client knows which scenes exist (and can loop them if we fall behind).
+          ENDPOINT="https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com"
+          aws s3 ls "s3://$R2_BUCKET/audio/" --endpoint-url "$ENDPOINT" \
+            | grep -oE '[0-9]+\.mp3' | sed 's/\.mp3$//' | sort -n > scenes.txt
+          if [ ! -s scenes.txt ]; then echo "no scenes in bucket"; exit 0; fi
+          MIN=$(head -1 scenes.txt)
+          MAX=$(tail -1 scenes.txt)
+          printf '{"version":1,"min":%s,"max":%s}' "$MIN" "$MAX" > index.json
+          cat index.json
+          aws s3 cp index.json "s3://$R2_BUCKET/audio/index.json" \
+            --endpoint-url "$ENDPOINT" \
+            --content-type application/json \
+            --cache-control "no-cache"

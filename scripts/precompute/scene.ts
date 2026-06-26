@@ -1,7 +1,8 @@
 // Build one scene's audio: announcer intro -> applause -> speaker phrases (with a
 // short applause after applause-flagged lines) -> closing applause, concatenated
-// into a single mp3, plus a timing manifest. Phrases fill the speaking budget by
-// REAL audio duration so the scene stays within a fixed wall-clock unit.
+// into a single mp3, plus a timing manifest. Phrases fill the scene's unit by
+// REAL audio duration, stopping before the reserved closing ovation so the
+// speaker is never cut off, so the audio lines up with the broadcast clock.
 
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
@@ -47,18 +48,23 @@ export function buildScene(
   engine: SpeechEngine,
   sceneIndex: number,
   seed: string,
-  speakingBudgetMs: number,
+  unitMs: number,
   outDir: string,
 ): SceneManifest {
-  const scene = engine.generateScene(sceneIndex, speakingBudgetMs);
+  const scene = engine.generateScene(sceneIndex, unitMs);
   const tmp = mkdtempSync(join(tmpdir(), `kn-scene-${sceneIndex}-`));
   const applauseRng = new Rng(`${seed}|applause|${sceneIndex}`);
   const parts: string[] = [];
   const segments: AudioSegment[] = [];
   let cursor = 0;
 
-  const append = (file: string, kind: AudioSegment["kind"], text: string, utteranceIndex: number): void => {
-    const dur = durationMs(file);
+  const append = (
+    file: string,
+    kind: AudioSegment["kind"],
+    text: string,
+    utteranceIndex: number,
+    dur = durationMs(file),
+  ): void => {
     segments.push({ kind, startMs: cursor, durationMs: dur, text: kind === "applause" ? "" : text, utteranceIndex });
     cursor += dur;
     parts.push(file);
@@ -75,20 +81,28 @@ export function buildScene(
   append(introWav, "intro", scene.intro.text, -1);
   applause(SHORT_APPLAUSE);
 
-  // Speaker phrases, fitting the speaking budget by real audio duration.
+  // Reserve the closing ovation up front so the keynote stops in time for it.
+  const closing = LONG_APPLAUSE.length > 0 ? applauseRng.pick(LONG_APPLAUSE) : null;
+  const speakLimit = Math.max(cursor, unitMs - (closing ? durationMs(closing) : 0));
+
+  // Speaker phrases, filling the speaking window by real audio duration. A phrase
+  // is only added if it finishes before the ovation, so the speaker is never cut.
   const voiceId = speakerVoice(scene.speaker.gender, scene.speaker.persona).id;
-  for (let i = 0; i < scene.utterances.length; i++) {
-    if (cursor >= speakingBudgetMs) break;
+  let spoken = 0;
+  for (let i = 0; i < scene.utterances.length && cursor < speakLimit; i++) {
     const u = scene.utterances[i];
     if (!u) break;
     const wav = join(tmp, `u${i}.wav`);
     synth(u.text, voiceId, wav);
-    append(wav, "speech", u.text, i);
-    if (u.applause) applause(SHORT_APPLAUSE);
+    const dur = durationMs(wav);
+    if (spoken > 0 && cursor + dur > speakLimit) break;
+    append(wav, "speech", u.text, i, dur);
+    spoken++;
+    if (u.applause && cursor < speakLimit) applause(SHORT_APPLAUSE);
   }
 
-  // Closing ovation.
-  applause(LONG_APPLAUSE);
+  // Closing ovation, which carries the scene to the end of its unit.
+  if (closing) append(closing, "applause", "", -1);
 
   const outMp3 = join(outDir, `${sceneIndex}.mp3`);
   concatToMp3(parts, outMp3);
