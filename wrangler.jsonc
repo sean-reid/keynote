@@ -11,8 +11,7 @@
   "r2_buckets": [
     { "binding": "KEYNOTE_AUDIO", "bucket_name": "keynote-audio" }
   ],
-  "routes": [
-    { "pattern": "keynote.dwainosaur.com", "custom_domain": true }
-  ],
+  // keynote.dwainosaur.com is bound to this Worker in the Cloudflare dashboard,
+  // so deploys need only account-level Workers permissions (no zone access).
   "observability": { "enabled": true }
 }
