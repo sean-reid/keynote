@@ -26,16 +26,6 @@ export function beatNamesProduct(beat: Beat): boolean {
   return PRODUCT_AWARE.has(beat);
 }
 
-/** Generic metric lines, kept here so numbers show up in the "metric" beat. */
-const METRIC_TEMPLATES: readonly string[] = [
-  "And the numbers speak for themselves: #product# is already driving #figure# gains in #nounPlural#.",
-  "We're seeing #figure# improvement in #nounPlural#, and frankly, we're just getting started.",
-  "#figure#. That is not a projection. That is #product# in production today.",
-  "Early adopters are reporting #figure# more #adjective# #nounPlural# with #product#.",
-  "In our benchmarks, #product# delivered #figure# the throughput at a fraction of the cost.",
-  "The early data is staggering: #figure# fewer #nounPlural#, and the curve is still bending.",
-];
-
 /** Candidate raw lines (pre-expansion) for a given beat. */
 export function beatPool(
   beat: Beat,
@@ -56,7 +46,7 @@ export function beatPool(
     case "feature":
       return [...topic.sentenceTemplates, ...topic.cliches];
     case "metric":
-      return [...METRIC_TEMPLATES, ...topic.cliches];
+      return [...rhetoric.metricTemplates, ...topic.cliches];
     case "vision":
       return [...rhetoric.applauseLines, ...topic.cliches, ...rhetoric.analogies];
     case "callToAction":

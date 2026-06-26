@@ -40,7 +40,8 @@ function check(scene: Scene): void {
     if (/\b(\w+)\s+\1\b/i.test(t)) issues.push({ kind: "doubled-word", scene: scene.index, text: t });
     if (/\s{2,}/.test(t)) issues.push({ kind: "double-space", scene: scene.index, text: t });
     if (/\s[,.]/.test(t)) issues.push({ kind: "space-before-punct", scene: scene.index, text: t });
-    if (!/^[A-Z0-9"']/.test(t)) issues.push({ kind: "bad-start", scene: scene.index, text: t });
+    if (!/^[A-Z0-9"'$]/.test(t)) issues.push({ kind: "bad-start", scene: scene.index, text: t });
+    if (/\bevery \w+s\b/.test(t)) issues.push({ kind: "every-plural", scene: scene.index, text: t });
     if (!/[.!?…"']$/.test(t)) issues.push({ kind: "bad-end", scene: scene.index, text: t });
   }
 }
@@ -51,6 +52,7 @@ for (let i = 0; i < sceneCount; i++) {
   if (printReadable) {
     process.stdout.write(
       `\n${"=".repeat(72)}\n[scene ${scene.index}] ${scene.company} - ${scene.topicLabel}\n` +
+        `speaker: ${scene.speaker.name}, ${scene.speaker.title}\n` +
         `product: ${scene.product}  |  tagline: ${scene.tagline}\n${"-".repeat(72)}\n`,
     );
     process.stdout.write(scene.utterances.map((u) => u.text).join(" ") + "\n");

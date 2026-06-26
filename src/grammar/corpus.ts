@@ -1,7 +1,9 @@
 // Assemble the in-browser corpus from the lexicon JSON files. Vite inlines these
 // at build time, so no network request is needed to start generating speech.
 
-import type { Corpus, LexCategory, RhetoricCategory } from "./types.ts";
+import type { Branding, Corpus, LexCategory, Presenters, RhetoricCategory } from "./types.ts";
+import presenters from "../../data/presenters.json";
+import branding from "../../data/branding.json";
 
 const RHETORIC_CATEGORY = "rhetoric_structure";
 
@@ -30,6 +32,11 @@ export function loadCorpus(): Corpus {
   if (!rhetoric) throw new Error("Lexicon is missing the rhetoric_structure file");
   domains.sort((a, b) => a.category.localeCompare(b.category));
 
-  cached = { domains, rhetoric };
+  cached = {
+    domains,
+    rhetoric,
+    presenters: presenters as Presenters,
+    branding: branding as Branding,
+  };
   return cached;
 }

@@ -38,12 +38,29 @@ export interface RhetoricCategory extends LexCategory {
   hedges: string[];
   discourseMarkers: string[];
   callbackPhrases: string[];
+  audience: string[];
+  metricTemplates: string[];
 }
 
-/** Everything the engine needs: the themed domains plus the rhetoric backbone. */
+/** The pool of presenter identities (data/presenters.json). */
+export interface Presenters {
+  firstNames: string[];
+  lastNames: string[];
+  titles: string[];
+}
+
+/** Knobs for coining fictional company and product names (data/branding.json). */
+export interface Branding {
+  companySuffixes: string[];
+  productConnectors: string[];
+}
+
+/** Everything the engine needs: themed domains, rhetoric, presenters, branding. */
 export interface Corpus {
   domains: LexCategory[];
   rhetoric: RhetoricCategory;
+  presenters: Presenters;
+  branding: Branding;
 }
 
 /** A keynote moves through these beats; each scene is one pass through an arc. */
@@ -66,6 +83,16 @@ export interface Utterance {
   beat: Beat;
   topic: string;
   nominalMs: number;
+  /** True when the crowd should react with applause after this line. */
+  applause: boolean;
+}
+
+/** The fictional presenter delivering a scene. */
+export interface Speaker {
+  name: string;
+  title: string;
+  /** Stable seed for avatar/voice variation, so each speaker looks/sounds distinct. */
+  persona: number;
 }
 
 /** A self-contained coherent block: one company, one product, one topic arc. */
@@ -76,6 +103,7 @@ export interface Scene {
   company: string;
   product: string;
   tagline: string;
+  speaker: Speaker;
   utterances: Utterance[];
   totalMs: number;
 }

@@ -5,10 +5,10 @@
 import { BODY_BEATS, INTRO_BEATS, OUTRO_BEATS, beatNamesProduct, beatPool } from "./beats.ts";
 import { COMMA_PAUSE_MS, MS_PER_WORD, SCENE_MS, SENTENCE_PAUSE_MS } from "./config.ts";
 import { capitalize, collapseDuplicateWords, correctArticles, lowerFirst } from "./inflect.ts";
-import { coinCompany, coinProduct, coinTagline } from "./names.ts";
+import { coinCompany, coinProduct, coinSpeaker, coinTagline } from "./names.ts";
 import { Rng } from "./rng.ts";
 import { expand, type ExpandContext } from "./template.ts";
-import type { Beat, Corpus, LexCategory, Scene, Utterance } from "./types.ts";
+import type { Beat, Branding, Corpus, LexCategory, Presenters, Scene, Utterance } from "./types.ts";
 
 const OUTRO_RESERVE_MS = 9_000;
 const TEASER = "what comes next";
@@ -16,15 +16,24 @@ const TEASER = "what comes next";
 export class SpeechEngine {
   private readonly domains: LexCategory[];
   private readonly rhetoric: Corpus["rhetoric"];
+  private readonly presenters: Presenters;
+  private readonly branding: Branding;
   private readonly weights: number[];
   private readonly seed: string;
+  private readonly quantified: RegExp;
 
   constructor(corpus: Corpus, seed: string) {
     if (corpus.domains.length === 0) throw new Error("Corpus has no domains");
     this.seed = seed;
     this.domains = corpus.domains;
     this.rhetoric = corpus.rhetoric;
+    this.presenters = corpus.presenters;
+    this.branding = corpus.branding;
     this.weights = this.domains.map((d) => (d.weight > 0 ? d.weight : 1));
+    // Singularize a plural audience noun after a singular quantifier
+    // ("every builders" -> "every builder").
+    const aud = this.rhetoric.audience.join("|");
+    this.quantified = new RegExp(`\\b(every|each|either|neither|a|an|one|single|this|that)\\s+(${aud})\\b`, "gi");
   }
 
   /** Topic for a scene, with a little stickiness to the previous scene. */
@@ -42,9 +51,10 @@ export class SpeechEngine {
     const topic = this.domains[this.topicIndex(sceneIndex)] as LexCategory;
     const rng = new Rng(`${this.seed}|scene|${sceneIndex}`);
 
-    const company = coinCompany(rng, topic, this.rhetoric);
-    const product = coinProduct(rng, topic, this.rhetoric);
+    const company = coinCompany(rng, topic, this.rhetoric, this.branding);
+    const product = coinProduct(rng, topic, this.rhetoric, this.branding);
     const tagline = coinTagline(rng, topic);
+    const speaker = coinSpeaker(rng, this.presenters);
 
     const ctx: ExpandContext = { rng, topic, rhetoric: this.rhetoric, product, company };
     const utterances: Utterance[] = [];
@@ -63,10 +73,11 @@ export class SpeechEngine {
     }
 
     let i = 0;
+    const maxBody = Math.ceil(targetMs / 800) + 100; // safety against a degenerate corpus
     while (totalMs < targetMs - OUTRO_RESERVE_MS) {
       emit(BODY_BEATS[i % BODY_BEATS.length] as Beat);
       i++;
-      if (i > 400) break; // safety against a degenerate (empty) corpus
+      if (i > maxBody) break;
     }
 
     for (const beat of OUTRO_BEATS) emit(beat);
@@ -78,6 +89,7 @@ export class SpeechEngine {
       company,
       product,
       tagline,
+      speaker,
       utterances,
       totalMs,
     };
@@ -92,20 +104,34 @@ export class SpeechEngine {
     // Keep the product name hidden until the reveal beat.
     const lineCtx: ExpandContext = beatNamesProduct(beat) ? ctx : { ...ctx, product: TEASER };
 
-    // Try a few draws to avoid repeating a line already used in this scene.
-    let text = "";
+    // Try a few draws to avoid repeating a core line already used in this scene.
+    // Dedupe on the core (pre-lead-in) so the same sentence with a different
+    // transition prefix still counts as a repeat.
+    let core = "";
     for (let attempt = 0; attempt < 8; attempt++) {
-      const core = capitalize(expand(this.pickLine(beat, topic, ctx), lineCtx).trim());
-      text = finalizeSentence(this.applyLeadIn(beat, ctx, core));
-      if (!seen.has(text)) break;
+      core = capitalize(expand(this.pickLine(beat, topic, ctx), lineCtx).trim());
+      if (!seen.has(core)) break;
     }
-    seen.add(text);
+    seen.add(core);
 
+    const text = this.fixQuantifiers(finalizeSentence(this.applyLeadIn(beat, ctx, core)));
     const words = text.split(/\s+/).filter(Boolean);
     const commas = (text.match(/,/g) ?? []).length;
     const nominalMs = words.length * MS_PER_WORD + SENTENCE_PAUSE_MS + commas * COMMA_PAUSE_MS;
+    const applause = this.applauseFor(beat, ctx.rng);
 
-    return { text, words, beat, topic: topic.category, nominalMs };
+    return { text, words, beat, topic: topic.category, nominalMs, applause };
+  }
+
+  /** Should the crowd applaud after this beat? */
+  private applauseFor(beat: Beat, rng: Rng): boolean {
+    if (beat === "reveal" || beat === "gratitude") return true;
+    if (beat === "vision") return rng.chance(0.35);
+    return false;
+  }
+
+  private fixQuantifiers(text: string): string {
+    return text.replace(this.quantified, (_m, det: string, word: string) => `${det} ${word.slice(0, -1)}`);
   }
 
   private pickLine(beat: Beat, topic: LexCategory, ctx: ExpandContext): string {
@@ -164,6 +190,8 @@ function finalizeSentence(input: string): string {
   text = correctArticles(text);
   text = collapseDuplicateWords(text);
   text = capitalize(text);
+  // Capitalize the start of any later sentence inside a multi-sentence line.
+  text = text.replace(/([.!?…]\s+)([a-z])/g, (_m, p: string, c: string) => p + c.toUpperCase());
   if (!/[.!?…]$/.test(text)) text += ".";
   return text;
 }

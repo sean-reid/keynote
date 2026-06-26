@@ -4,33 +4,60 @@
 const PLURAL_EXCEPTIONS: Record<string, string> = {
   analysis: "analyses",
   thesis: "theses",
+  hypothesis: "hypotheses",
   crisis: "crises",
   matrix: "matrices",
   vertex: "vertices",
   index: "indices",
+  criterion: "criteria",
+  phenomenon: "phenomena",
   schema: "schemas",
   datum: "data",
-  data: "data",
   status: "statuses",
 };
+
+// Mass / uncountable nouns that should never take a plural.
+const UNCOUNTABLE = new Set([
+  "data", "metadata", "software", "hardware", "firmware", "middleware", "malware",
+  "infrastructure", "intelligence", "analytics", "telemetry", "compliance", "resilience",
+  "governance", "observability", "security", "connectivity", "latency", "throughput",
+  "bandwidth", "training", "tooling", "automation", "momentum", "traction", "research",
+  "content", "feedback", "information", "knowledge", "equipment", "progress", "encryption",
+  "authentication", "authorization", "liquidity", "staking", "mining", "tooling",
+  "scalability", "reliability", "sustainability", "visibility", "synergy", "throughput",
+]);
+
+// The few words that take -ves; everything else (proof, roof, belief) takes -s.
+const F_TO_VES = new Set([
+  "leaf", "half", "wolf", "knife", "life", "shelf", "calf", "loaf", "thief", "wife",
+  "elf", "self", "scarf", "hoof", "wharf",
+]);
 
 /** Pluralize a single noun. */
 export function pluralize(word: string): string {
   const lower = word.toLowerCase();
+  if (UNCOUNTABLE.has(lower)) return word;
   const exception = PLURAL_EXCEPTIONS[lower];
   if (exception) return matchCase(word, exception);
+  if (F_TO_VES.has(lower)) return matchCase(word, lower.replace(/fe?$/, "ves"));
 
-  if (/(s|x|z|ch|sh)$/i.test(word)) return word + "es";
+  if (/s$/i.test(word)) return word; // already plural or sibilant-final mass noun
+  if (/(x|z|ch|sh)$/i.test(word)) return word + "es";
   if (/[^aeiou]y$/i.test(word)) return word.slice(0, -1) + "ies";
   if (/[^aeiou]o$/i.test(word)) return word + "es";
-  if (/(f)$/i.test(word)) return word.slice(0, -1) + "ves";
-  if (/fe$/i.test(word)) return word.slice(0, -2) + "ves";
   return word + "s";
 }
 
 /** Turn a base verb into its -ing form. */
 export function gerund(verb: string): string {
   const word = verb.trim();
+  // Phrasal or compound verb: inflect the first token, keep the remainder.
+  const split = /^(\S+)(\s.*)$/s.exec(word);
+  if (split?.[1] && split[2]) return gerund(split[1]) + split[2];
+  if (word.includes("-")) {
+    const head = word.slice(0, word.indexOf("-"));
+    return gerund(head) + word.slice(word.indexOf("-"));
+  }
   if (/[^aeiou]e$/i.test(word) && !/(ee|ye|oe)$/i.test(word)) {
     return word.slice(0, -1) + "ing";
   }

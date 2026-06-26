@@ -80,6 +80,38 @@ describe("SpeechEngine", () => {
     expect(scene.totalMs).toBeLessThan(SCENE_MS * 1.3);
   });
 
+  it("assigns each scene a presenter with a name and title", () => {
+    const scene = new SpeechEngine(corpus, "speaker").generateScene(4);
+    expect(scene.speaker.name).toMatch(/\w+ \w+/);
+    expect(scene.speaker.title.length).toBeGreaterThan(0);
+    expect(scene.speaker.persona).toBeGreaterThanOrEqual(0);
+  });
+
+  it("flags applause after the reveal and the closing", () => {
+    const scene = new SpeechEngine(corpus, "applause").generateScene(2);
+    const reveal = scene.utterances.find((u) => u.beat === "reveal");
+    expect(reveal?.applause).toBe(true);
+    expect(scene.utterances.at(-1)?.applause).toBe(true);
+  });
+
+  it("never says a singular quantifier before a plural audience noun", () => {
+    const aud = corpus.rhetoric.audience.join("|");
+    const bad = new RegExp(`\\b(every|each|a|an|single)\\s+(${aud})\\b`, "i");
+    for (let i = 0; i < 40; i++) {
+      const scene = new SpeechEngine(corpus, "quant").generateScene(i);
+      for (const u of scene.utterances) expect(u.text, u.text).not.toMatch(bad);
+    }
+  });
+
+  it("capitalizes every sentence, including mid-line ones", () => {
+    for (let i = 0; i < 40; i++) {
+      const scene = new SpeechEngine(corpus, "caps").generateScene(i);
+      for (const u of scene.utterances) {
+        expect(u.text, u.text).not.toMatch(/[.!?]\s+[a-z]/);
+      }
+    }
+  });
+
   it("drifts topics across many scenes", () => {
     const engine = new SpeechEngine(corpus, "drift");
     const topics = new Set<string>();

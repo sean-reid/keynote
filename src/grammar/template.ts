@@ -13,17 +13,6 @@ export interface ExpandContext {
   company: string;
 }
 
-const AUDIENCE = [
-  "everyone",
-  "folks",
-  "builders",
-  "friends",
-  "dreamers",
-  "operators",
-  "leaders",
-  "innovators",
-];
-
 const SLOT_PATTERN = /#(\w+)#/g;
 const MAX_DEPTH = 4;
 
@@ -62,14 +51,15 @@ function resolveSlot(name: string, ctx: ExpandContext): string {
       return blend(ctx, topic.buzzphrases, rhetoric.buzzphrases);
     case "metric":
     case "figure":
-      // Most templates want a concrete quantity, not a lead-in phrase.
-      return quantityMetric(ctx);
+      // Most templates want a concrete quantity, not a lead-in phrase. Strip any
+      // leading article so frames like "a #metric#" don't yield "a an LTV...".
+      return quantityMetric(ctx).replace(/^(an?|the)\s+/i, "");
     case "product":
       return ctx.product;
     case "company":
       return ctx.company;
     case "audience":
-      return ctx.rng.pick(AUDIENCE);
+      return ctx.rng.pick(ctx.rhetoric.audience);
     default:
       // Unknown slot: leave a readable word rather than a stray token.
       return blend(ctx, topic.nouns, rhetoric.nouns);
