@@ -11,4 +11,23 @@ export default tseslint.config(
       "no-console": ["warn", { allow: ["warn", "error"] }],
     },
   },
+  {
+    // Node dev scripts: allow node globals and console output.
+    files: ["scripts/**"],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        console: "readonly",
+        fetch: "readonly",
+        setTimeout: "readonly",
+        AbortSignal: "readonly",
+        Buffer: "readonly",
+        URL: "readonly",
+      },
+    },
+    rules: {
+      "no-undef": "off",
+      "no-console": "off",
+    },
+  },
 );
