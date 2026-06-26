@@ -11,6 +11,7 @@ import { join } from "node:path";
 import type { SpeechEngine } from "../../src/grammar/engine.ts";
 import type { AudioSegment, SceneManifest } from "../../src/audio/manifest.ts";
 import { Rng } from "../../src/grammar/rng.ts";
+import { END_APPLAUSE_MS } from "../../src/sync/clock.ts";
 import { ANNOUNCER, speakerVoice } from "./voices.ts";
 import { synth } from "./piper.ts";
 
@@ -81,28 +82,42 @@ export function buildScene(
   append(introWav, "intro", scene.intro.text, -1);
   applause(SHORT_APPLAUSE);
 
-  // Reserve the closing ovation up front so the keynote stops in time for it.
-  const closing = LONG_APPLAUSE.length > 0 ? applauseRng.pick(LONG_APPLAUSE) : null;
-  const speakLimit = Math.max(cursor, unitMs - (closing ? durationMs(closing) : 0));
+  // Reserve a window for the closing ovation so the speaker is never cut for it.
+  const speakLimit = Math.max(cursor, unitMs - END_APPLAUSE_MS);
 
   // Speaker phrases, filling the speaking window by real audio duration. A phrase
   // is only added if it finishes before the ovation, so the speaker is never cut.
+  // Applause after a flagged line is deferred to the next phrase, so the final
+  // line's clap merges into the closing ovation instead of playing as a separate
+  // short burst right before it.
   const voiceId = speakerVoice(scene.speaker.gender, scene.speaker.persona).id;
   let spoken = 0;
+  let pendingApplause = false;
   for (let i = 0; i < scene.utterances.length && cursor < speakLimit; i++) {
     const u = scene.utterances[i];
     if (!u) break;
+    if (pendingApplause) {
+      applause(SHORT_APPLAUSE);
+      pendingApplause = false;
+      if (cursor >= speakLimit) break;
+    }
     const wav = join(tmp, `u${i}.wav`);
     synth(u.text, voiceId, wav);
     const dur = durationMs(wav);
     if (spoken > 0 && cursor + dur > speakLimit) break;
     append(wav, "speech", u.text, i, dur);
     spoken++;
-    if (u.applause && cursor < speakLimit) applause(SHORT_APPLAUSE);
+    pendingApplause = u.applause;
   }
 
-  // Closing ovation, which carries the scene to the end of its unit.
-  if (closing) append(closing, "applause", "", -1);
+  // Closing ovation: keep the crowd going until the scene fills its unit, so
+  // there is no dead air before the next speaker. The broadcast clock trims any
+  // overrun at the unit boundary.
+  let guard = 0;
+  while (cursor < unitMs && LONG_APPLAUSE.length > 0 && guard < 16) {
+    applause(LONG_APPLAUSE);
+    guard++;
+  }
 
   const outMp3 = join(outDir, `${sceneIndex}.mp3`);
   concatToMp3(parts, outMp3);
