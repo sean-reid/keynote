@@ -105,6 +105,23 @@ function tick(): void {
       },
     );
   }
+
+  // Pre-generate the upcoming line so the next phrase is ready when this one ends.
+  if (voice.enabled) {
+    const upcoming =
+      cs.phase === "intro"
+        ? cs.scene.utterances[0]
+        : cs.phase === "speaking"
+          ? cs.scene.utterances[playhead + 1]
+          : undefined;
+    if (upcoming) {
+      voice.prefetch(upcoming.text, {
+        kind: "speaker",
+        persona: cs.scene.speaker.persona,
+        gender: cs.scene.speaker.gender,
+      });
+    }
+  }
 }
 
 tick();

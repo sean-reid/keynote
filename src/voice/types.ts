@@ -15,5 +15,7 @@ export interface VoiceProvider {
   /** True once the backend is loaded and healthy. */
   readonly usable: boolean;
   speak(text: string, opts: SpeakOptions, onEnd: () => void): void;
+  /** Optionally pre-generate an upcoming line to hide synthesis latency. */
+  prefetch?(text: string, opts: SpeakOptions): void;
   cancel(): void;
 }

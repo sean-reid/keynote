@@ -45,6 +45,11 @@ export class VoiceEngine {
     }
   }
 
+  /** Pre-generate an upcoming line (Piper only) so playback is seamless. */
+  prefetch(text: string, opts: SpeakOptions): void {
+    if (this.enabled && this.piper.usable) this.piper.prefetch(text, opts);
+  }
+
   cancel(): void {
     this.web.cancel();
     this.piper.cancel();
