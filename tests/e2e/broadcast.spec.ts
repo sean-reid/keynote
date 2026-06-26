@@ -16,7 +16,7 @@ async function openAt(page: import("@playwright/test").Page, instant: number) {
 test("speaking phase: live chrome, lower third, and a caption render", async ({ page }) => {
   await openAt(page, EPOCH_MS + UNIT_MS * 7 + INTRO_MS + INTRO_APPLAUSE_MS + 90_000);
 
-  await expect(page.locator(".live-label")).toHaveText("LIVE");
+  await expect(page.locator(".bug-live")).toContainText("LIVE");
   await expect(page.locator(".viewers")).toContainText("watching");
   await expect(page.locator(".lt-name")).not.toBeEmpty();
   await expect(page.locator(".caption-text")).not.toBeEmpty();
@@ -29,8 +29,8 @@ test("intro phase: announcer introduces the speaker", async ({ page }) => {
   await openAt(page, EPOCH_MS + UNIT_MS * 7 + 3_000);
 
   await expect(page.locator(".broadcast")).toHaveAttribute("data-phase", "intro");
-  await expect(page.locator(".caption")).toHaveAttribute("data-speaker", "ANNOUNCER");
   await expect(page.locator(".caption-text")).not.toBeEmpty();
+  await expect(page.locator(".caption-text")).toContainText("welcome", { ignoreCase: true });
 
   await page.screenshot({ path: "test-results/intro.png", fullPage: false });
 });

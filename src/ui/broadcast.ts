@@ -1,8 +1,12 @@
-// The broadcast overlay: a keynote stage with live-TV chrome. Built once, then
-// updated each tick from the clock state (no per-frame DOM churn).
+// The broadcast overlay: a keynote stage with live-TV production graphics. Built
+// once, then updated each tick from the clock state (no per-frame DOM churn).
 
 import type { ClockState } from "../sync/clock.ts";
 import { formatCount } from "../sync/viewers.ts";
+import { imagesFor } from "../stage/slides.ts";
+
+// How long each slide (the title card, then each photo) stays up.
+const SLIDE_MS = 13_000;
 
 function h<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -15,8 +19,14 @@ function h<K extends keyof HTMLElementTagNameMap>(
   return el;
 }
 
+function timecode(nowMs: number): string {
+  const d = new Date(nowMs);
+  const p = (n: number): string => String(n).padStart(2, "0");
+  return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
 export interface BroadcastView {
-  update(state: ClockState, viewers: number): void;
+  update(state: ClockState, viewers: number, nowMs: number): void;
   root: HTMLElement;
 }
 
@@ -25,24 +35,39 @@ export function createBroadcast(parent: HTMLElement): BroadcastView {
 
   // Stage
   const stage = h("div", "stage");
-  const spotlight = h("div", "spotlight");
   const screen = h("div", "screen");
+  const media = document.createElement("img");
+  media.className = "screen-media";
+  media.alt = "";
+  media.decoding = "async";
+  const screenText = h("div", "screen-text");
+  const slideRule = h("div", "slide-rule");
   const slideCompany = h("div", "slide-company");
   const slideProduct = h("div", "slide-product");
   const slideTagline = h("div", "slide-tagline");
-  screen.append(slideCompany, slideProduct, slideTagline);
+  screenText.append(slideCompany, slideProduct, slideRule, slideTagline);
+  const slideBadge = h("div", "slide-badge");
+  screen.append(media, screenText, slideBadge);
+  const spotlight = h("div", "spotlight");
   const presenter = h("div", "presenter");
   presenter.append(h("div", "presenter-head"), h("div", "presenter-body"));
   const podium = h("div", "podium");
-  stage.append(screen, spotlight, presenter, podium);
+  const floor = h("div", "floor");
+  stage.append(screen, spotlight, floor, presenter, podium);
 
-  // Top chrome
+  // Texture overlays that sell a live video feed.
+  const grain = h("div", "grain");
+  const scanlines = h("div", "scanlines");
+
+  // Top bug
   const top = h("header", "chrome chrome-top");
-  const live = h("div", "live");
-  live.append(h("span", "live-dot"), h("span", "live-label", "LIVE"));
-  const channel = h("div", "channel", "THE INFINITE KEYNOTE");
+  const bug = h("div", "bug");
+  bug.append(h("span", "bug-mark", "KEYNOTE"), h("span", "bug-live", "LIVE"));
+  const tcWrap = h("div", "status");
   const viewers = h("div", "viewers");
-  top.append(live, channel, viewers);
+  const tc = h("div", "timecode");
+  tcWrap.append(viewers, tc);
+  top.append(bug, tcWrap);
 
   // Lower third + caption
   const lowerThird = h("div", "lower-third");
@@ -54,46 +79,54 @@ export function createBroadcast(parent: HTMLElement): BroadcastView {
   const captionText = h("p", "caption-text");
   caption.append(captionText);
 
-  const applause = h("div", "applause", "applause");
-
-  // Ticker
-  const ticker = h("div", "ticker");
-  const tickerTrack = h("div", "ticker-track");
-  ticker.append(tickerTrack);
-
-  root.append(stage, top, lowerThird, applause, caption, ticker);
+  root.append(stage, scanlines, grain, top, lowerThird, caption);
   parent.append(root);
 
   let lastSceneIndex = -1;
   let lastPhase = "";
+  let images: string[] = [];
+  let slideSlot = -1;
 
-  function update(state: ClockState, viewerCountNow: number): void {
+  function update(state: ClockState, viewerCountNow: number, nowMs: number): void {
     const { scene } = state;
     viewers.textContent = `${formatCount(viewerCountNow)} watching`;
+    tc.textContent = timecode(nowMs);
 
     if (state.sceneIndex !== lastSceneIndex) {
       lastSceneIndex = state.sceneIndex;
       slideCompany.textContent = scene.company.toUpperCase();
       slideProduct.textContent = scene.product;
       slideTagline.textContent = scene.tagline;
+      slideBadge.textContent = scene.company.toUpperCase();
       ltName.textContent = scene.speaker.name;
       ltTitle.textContent = `${scene.speaker.title}, ${scene.company}`;
-      tickerTrack.textContent = `${scene.company}   //   Introducing ${scene.product}   //   ${scene.tagline}   //   ${scene.topicLabel}   //   `;
       root.dataset.topic = scene.topic;
+      images = imagesFor(scene.topic);
+      slideSlot = -1;
+    }
+
+    // Rotate the screen between the title card (slot 0) and each photo. The slot
+    // comes from the shared clock, so all viewers see the same slide together.
+    const slot = images.length > 0 ? Math.floor(nowMs / SLIDE_MS) % (images.length + 1) : 0;
+    if (slot !== slideSlot) {
+      slideSlot = slot;
+      if (slot === 0) {
+        screen.classList.remove("show-media");
+      } else {
+        media.src = images[slot - 1] ?? "";
+        screen.classList.add("show-media");
+      }
     }
 
     if (state.phase !== lastPhase) {
       lastPhase = state.phase;
       root.dataset.phase = state.phase;
       root.classList.toggle("is-applause", state.applause);
-      root.classList.toggle("is-intro", state.phase === "intro");
     }
 
     if (state.line) {
       caption.classList.remove("hidden");
-      const prefix = state.line.role === "announcer" ? "ANNOUNCER" : scene.speaker.name;
       captionText.textContent = state.line.text;
-      caption.dataset.speaker = prefix;
     } else {
       caption.classList.add("hidden");
     }
