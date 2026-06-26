@@ -117,7 +117,12 @@ export function buildScene(
     company: scene.company,
     product: scene.product,
     tagline: scene.tagline,
-    speaker: { name: scene.speaker.name, title: scene.speaker.title, gender: scene.speaker.gender },
+    speaker: {
+      name: scene.speaker.name,
+      title: scene.speaker.title,
+      gender: scene.speaker.gender,
+      persona: scene.speaker.persona,
+    },
     durationMs: cursor,
     segments,
   };

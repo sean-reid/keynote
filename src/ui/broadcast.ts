@@ -4,6 +4,7 @@
 import type { StreamFrame } from "../stream/player.ts";
 import { formatCount } from "../sync/viewers.ts";
 import { imagesFor } from "../stage/slides.ts";
+import { Presenter } from "../stage/presenter.ts";
 
 // How long each slide (the title card, then each photo) stays up.
 const SLIDE_MS = 13_000;
@@ -30,7 +31,7 @@ export interface BroadcastView {
   root: HTMLElement;
 }
 
-export function createBroadcast(parent: HTMLElement): BroadcastView {
+export function createBroadcast(parent: HTMLElement, level: () => number = () => 0): BroadcastView {
   const root = h("div", "broadcast");
 
   // Stage
@@ -49,11 +50,11 @@ export function createBroadcast(parent: HTMLElement): BroadcastView {
   const slideBadge = h("div", "slide-badge");
   screen.append(media, screenText, slideBadge);
   const spotlight = h("div", "spotlight");
-  const presenter = h("div", "presenter");
-  presenter.append(h("div", "presenter-head"), h("div", "presenter-body"));
+  const haze = h("div", "haze");
+  const presenter = new Presenter(level);
   const podium = h("div", "podium");
   const floor = h("div", "floor");
-  stage.append(screen, spotlight, floor, presenter, podium);
+  stage.append(screen, spotlight, haze, floor, presenter.canvas, podium);
 
   // Texture overlays that sell a live video feed.
   const grain = h("div", "grain");
@@ -81,6 +82,7 @@ export function createBroadcast(parent: HTMLElement): BroadcastView {
 
   root.append(stage, scanlines, grain, top, lowerThird, caption);
   parent.append(root);
+  presenter.start();
 
   let lastSceneIndex = -1;
   let lastPhase = "";
@@ -104,6 +106,7 @@ export function createBroadcast(parent: HTMLElement): BroadcastView {
       ltTitle.textContent = `${manifest.speaker.title}, ${manifest.company}`;
       images = imagesFor(manifest.topic);
       slideSlot = -1;
+      presenter.setSpeaker(manifest.speaker.persona ?? manifest.speaker.name, manifest.speaker.gender);
     }
 
     // Rotate the screen between the title card (slot 0) and each photo. The slot
@@ -138,6 +141,8 @@ export function createBroadcast(parent: HTMLElement): BroadcastView {
         caption.classList.add("hidden");
       }
     }
+
+    presenter.setState({ speaking: frame.phase === "speaking", applause: frame.applause });
   }
 
   return { update, root };

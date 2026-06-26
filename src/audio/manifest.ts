@@ -20,6 +20,10 @@ export interface SceneAudioSpeaker {
   name: string;
   title: string;
   gender: "male" | "female";
+  /** Persona seed driving the speaker's deterministic on-stage appearance.
+   * Optional so older manifests without it still load (the client falls back
+   * to seeding from the name). */
+  persona?: number;
 }
 
 export interface SceneManifest {

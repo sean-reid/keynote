@@ -52,6 +52,12 @@ body {
   inset: 0;
   background: radial-gradient(140% 90% at 50% 22%, #15171c 0%, #0a0b0e 46%, #060607 100%);
   transition: filter 0.5s ease;
+  /* A locked-off broadcast camera that floats almost imperceptibly. */
+  animation: camera-drift 34s ease-in-out infinite alternate;
+}
+@keyframes camera-drift {
+  from { transform: scale(1.025) translate(-0.5%, 0.25%); }
+  to { transform: scale(1.035) translate(0.6%, -0.35%); }
 }
 .floor {
   position: absolute;
@@ -175,29 +181,26 @@ body {
   pointer-events: none;
 }
 
-.presenter {
+.presenter-canvas {
   position: absolute;
-  bottom: 8%;
   left: 50%;
+  bottom: 2%;
   transform: translateX(-50%);
-  width: clamp(64px, 8vw, 104px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  filter: drop-shadow(0 16px 26px rgba(0, 0, 0, 0.7));
+  width: min(56vw, 700px);
+  height: clamp(280px, 56vh, 500px);
+  pointer-events: none;
+  filter: drop-shadow(0 22px 34px rgba(0, 0, 0, 0.55));
 }
-.presenter-head {
-  width: 36%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: #11151d;
-}
-.presenter-body {
-  margin-top: -6%;
-  width: 100%;
-  height: clamp(76px, 13vh, 150px);
-  border-radius: 46% 46% 10% 10% / 28% 28% 6% 6%;
-  background: #0d121b;
+
+/* Atmospheric haze so stage light reads as scattering through the room air. */
+.haze {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(56% 46% at 50% 30%, rgba(120, 150, 210, 0.05), transparent 70%),
+    radial-gradient(44% 60% at 50% 96%, rgba(255, 224, 170, 0.06), transparent 72%);
 }
 .podium {
   position: absolute;
@@ -403,12 +406,14 @@ body {
 }
 
 @media (max-width: 640px) {
-  .screen { width: 88vw; top: 7%; }
+  .screen { width: 92vw; top: 6%; }
+  /* Keep the presenter from crowding out the slide on tall, narrow screens. */
+  .presenter-canvas { width: 96vw; height: clamp(180px, 32vh, 320px); bottom: 12%; }
   .lower-third { bottom: 150px; }
   .caption { bottom: 48px; width: 92vw; }
   .caption-text { font-size: 1.02rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .grain, .bug-live::before { animation: none; }
+  .grain, .bug-live::before, .stage { animation: none; }
 }

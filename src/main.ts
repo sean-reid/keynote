@@ -7,8 +7,8 @@ import { StreamPlayer } from "./stream/player.ts";
 const app = document.querySelector<HTMLDivElement>("#app");
 if (!app) throw new Error("missing #app");
 
-const view = createBroadcast(app);
 const player = new StreamPlayer();
+const view = createBroadcast(app, () => player.level());
 
 void syncTime();
 
@@ -39,7 +39,7 @@ sound.addEventListener("click", () => {
 function render(): void {
   const now = syncedNow();
   const frame = player.frame(now);
-  if (frame) view.update(frame, viewerCount(now, frame.sceneIndex), now);
+  if (frame) view.update(frame, viewerCount(now), now);
 }
 
 player.setOnContent(render);

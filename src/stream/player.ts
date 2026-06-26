@@ -99,6 +99,12 @@ export class StreamPlayer {
   private muted = true;
   private onContent: (() => void) | null = null;
 
+  // Web Audio analysis for lip-sync, wired up on the first unmute gesture.
+  private audioCtx: AudioContext | null = null;
+  private analyser: AnalyserNode | null = null;
+  private levelData: Uint8Array<ArrayBuffer> | null = null;
+  private smoothedLevel = 0;
+
   constructor() {
     const audio = new Audio();
     audio.preload = "auto";
@@ -122,12 +128,56 @@ export class StreamPlayer {
   enableSound(): void {
     this.muted = false;
     this.audio.muted = false;
+    this.enableAnalyser();
     void this.audio.play().catch(() => undefined);
   }
 
   mute(): void {
     this.muted = true;
     this.audio.muted = true;
+  }
+
+  /** Output level in 0..1 for lip-sync, sampled at render rate. Returns 0 when
+   * there is no analyser yet (muted) so callers fall back to a procedural mouth. */
+  level(): number {
+    const analyser = this.analyser;
+    const data = this.levelData;
+    if (!analyser || !data) return 0;
+    analyser.getByteTimeDomainData(data);
+    let sum = 0;
+    for (let i = 0; i < data.length; i++) {
+      const v = (data[i]! - 128) / 128;
+      sum += v * v;
+    }
+    const rms = Math.sqrt(sum / data.length);
+    this.smoothedLevel += (rms - this.smoothedLevel) * 0.4;
+    return this.smoothedLevel;
+  }
+
+  private enableAnalyser(): void {
+    if (this.audioCtx) {
+      void this.audioCtx.resume().catch(() => undefined);
+      return;
+    }
+    try {
+      const Ctx =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx();
+      const source = ctx.createMediaElementSource(this.audio);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      analyser.connect(ctx.destination);
+      this.audioCtx = ctx;
+      this.analyser = analyser;
+      this.levelData = new Uint8Array(new ArrayBuffer(analyser.fftSize));
+      void ctx.resume().catch(() => undefined);
+    } catch {
+      // Web Audio unavailable, or the element is already captured; lip-sync
+      // falls back to the procedural speech rhythm.
+    }
   }
 
   /** Advance to wall-clock `now` and return what to render, or null if nothing
