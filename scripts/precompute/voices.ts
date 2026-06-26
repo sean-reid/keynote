@@ -1,10 +1,11 @@
 // The Piper voices the pipeline uses, with their Hugging Face model paths.
 //
-// We use every single-speaker English voice that ships a medium-quality model.
-// Medium keeps synthesis fast (the pipeline runs nightly over many scenes) while
+// Speakers use every single-speaker English voice that ships a medium-quality
+// model. Medium keeps synthesis fast (the pipeline generates many scenes) while
 // still sounding natural. Voices are split by gender so a speaker's voice matches
-// their name, and the announcer has a dedicated voice that never appears in the
-// speaker pool, so the off-camera intro is always a distinct person.
+// their name. The announcer is heard before every scene, so it uses the
+// high-quality model and is kept out of the speaker pools, so the off-camera
+// intro is always a distinct, premium-sounding voice.
 //
 // Excluded on purpose: multi-speaker models (no single gender to match) and
 // voices that only ship a "low" model (below the medium quality bar).
@@ -18,9 +19,10 @@ export interface PiperVoiceInfo {
 
 const voice = (id: string, path: string): PiperVoiceInfo => ({ id, path });
 
-/** Off-camera announcer who introduces every speaker; kept out of the pools
- * below so it is never mistaken for one of the presenters. */
-export const ANNOUNCER: PiperVoiceInfo = voice("en_US-norman-medium", "en/en_US/norman/medium");
+/** Off-camera announcer who introduces every speaker. High quality (the only
+ * high single-speaker male voice) and kept out of the pools below, so the intro
+ * is always a distinct, premium-sounding voice. */
+export const ANNOUNCER: PiperVoiceInfo = voice("en_US-ryan-high", "en/en_US/ryan/high");
 
 export const FEMALE: PiperVoiceInfo[] = [
   voice("en_US-amy-medium", "en/en_US/amy/medium"),
@@ -40,8 +42,8 @@ export const MALE: PiperVoiceInfo[] = [
   voice("en_US-joe-medium", "en/en_US/joe/medium"),
   voice("en_US-john-medium", "en/en_US/john/medium"),
   voice("en_US-kusal-medium", "en/en_US/kusal/medium"),
+  voice("en_US-norman-medium", "en/en_US/norman/medium"),
   voice("en_US-reza_ibrahim-medium", "en/en_US/reza_ibrahim/medium"),
-  voice("en_US-ryan-medium", "en/en_US/ryan/medium"),
   voice("en_GB-alan-medium", "en/en_GB/alan/medium"),
   voice("en_GB-northern_english_male-medium", "en/en_GB/northern_english_male/medium"),
 ];
