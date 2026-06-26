@@ -549,7 +549,16 @@ export class Presenter {
     const { ctx } = this;
     const lit = look.rimSide;
     const long = look.hairStyle === "long";
-    const drop = long ? hh * 1.6 : look.hairStyle === "medium" ? hh * 0.85 : hh * 0.1;
+    const female = look.gender === "female";
+    // Face-framing side hair is for women only; men keep a cap even at "medium",
+    // so a male medium reads as a normal cut rather than a chin-length bob.
+    const drop = female
+      ? long
+        ? hh * 1.6
+        : look.hairStyle === "medium"
+          ? hh * 0.85
+          : hh * 0.1
+      : hh * 0.1;
 
     // One continuous hair shape: a skull cap with a smooth hairline, flowing
     // down the sides for medium/long, so it reads as a single head of hair.

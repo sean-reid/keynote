@@ -15,6 +15,7 @@ describe("presenterLook", () => {
   it("never gives female presenters facial hair, and never makes them bald", () => {
     for (let i = 0; i < 60; i++) {
       const look = presenterLook(i, "female");
+      expect(look.gender).toBe("female");
       expect(look.facialHair).toBe("none");
       expect(["short", "medium", "long"]).toContain(look.hairStyle);
     }
@@ -23,6 +24,7 @@ describe("presenterLook", () => {
   it("keeps male hair styles to bald/short/medium with sane fields", () => {
     for (let i = 0; i < 60; i++) {
       const look = presenterLook(i, "male");
+      expect(look.gender).toBe("male");
       expect(["bald", "short", "medium"]).toContain(look.hairStyle);
       expect(["none", "stubble", "beard"]).toContain(look.facialHair);
       expect(look.build).toBeGreaterThan(0.8);

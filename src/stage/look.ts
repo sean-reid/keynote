@@ -10,6 +10,7 @@ export type HairStyle = "bald" | "short" | "medium" | "long";
 export type FacialHair = "none" | "stubble" | "beard";
 
 export interface PresenterLook {
+  gender: Gender;
   skin: string;
   hair: string;
   hairStyle: HairStyle;
@@ -54,5 +55,5 @@ export function presenterLook(seed: number | string, gender: Gender): PresenterL
   const build = gender === "male" ? rng.range(0.98, 1.14) : rng.range(0.9, 1.05);
   const rimSide: 1 | -1 = rng.chance(0.5) ? 1 : -1;
 
-  return { skin, hair, hairStyle, facialHair, glasses, suit, shirt, tie, build, rimSide };
+  return { gender, skin, hair, hairStyle, facialHair, glasses, suit, shirt, tie, build, rimSide };
 }
