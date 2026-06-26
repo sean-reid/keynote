@@ -28,6 +28,7 @@ export const FEMALE: PiperVoiceInfo[] = [
   voice("en_US-kristin-medium", "en/en_US/kristin/medium"),
   voice("en_US-lessac-medium", "en/en_US/lessac/medium"),
   voice("en_US-ljspeech-medium", "en/en_US/ljspeech/medium"),
+  voice("en_US-sam-medium", "en/en_US/sam/medium"),
   voice("en_GB-alba-medium", "en/en_GB/alba/medium"),
   voice("en_GB-cori-medium", "en/en_GB/cori/medium"),
   voice("en_GB-jenny_dioco-medium", "en/en_GB/jenny_dioco/medium"),
@@ -41,7 +42,6 @@ export const MALE: PiperVoiceInfo[] = [
   voice("en_US-kusal-medium", "en/en_US/kusal/medium"),
   voice("en_US-reza_ibrahim-medium", "en/en_US/reza_ibrahim/medium"),
   voice("en_US-ryan-medium", "en/en_US/ryan/medium"),
-  voice("en_US-sam-medium", "en/en_US/sam/medium"),
   voice("en_GB-alan-medium", "en/en_GB/alan/medium"),
   voice("en_GB-northern_english_male-medium", "en/en_GB/northern_english_male/medium"),
 ];
