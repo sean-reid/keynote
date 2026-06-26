@@ -364,8 +364,6 @@ export class Presenter {
     ctx.fillRect(cx - hw, cy - hh, hw * 2, hh * 2);
     ctx.restore();
 
-    this.hair(cx, cy, hw, hh, look);
-
     // Warm rim on the lit contour; cooler backlight rim on the far contour.
     ctx.save();
     this.ellipse(cx, cy, hw, hh);
@@ -381,6 +379,10 @@ export class Presenter {
     ctx.fillStyle = cool;
     ctx.fillRect(cx - hw, cy - hh, hw * 2, hh * 2);
     ctx.restore();
+
+    // Hair is drawn last so it stays fully opaque; otherwise the face rim light
+    // bleeds over the hairline and the head shows through.
+    this.hair(cx, cy, hw, hh, look);
   }
 
   private features(cx: number, cy: number, hw: number, hh: number, look: PresenterLook): void {
