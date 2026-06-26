@@ -1,15 +1,23 @@
-// Map a speaker to a Kokoro neural voice. Kokoro's voices are gendered, so this
-// keeps the voice consistent with the speaker's name and gender, with variety
-// across speakers and a deep, fixed voice for the off-camera announcer.
+// Map a speaker to a Piper voice. Each voice is a separate ~60 MB model that
+// streams from the CDN and is cached in the browser, so the set is kept small:
+// two voices per gender for variety, plus a distinct deep voice for the
+// off-camera announcer.
 
-import type { SpeakOptions } from "./speech.ts";
+import type { VoiceId } from "@diffusionstudio/vits-web";
+import type { SpeakOptions } from "./types.ts";
 
-const FEMALE = ["af_heart", "af_bella", "af_nicole", "af_sarah", "af_aoede", "af_kore", "bf_emma", "bf_isabella"];
-const MALE = ["am_michael", "am_eric", "am_liam", "am_adam", "am_fenrir", "bm_george", "bm_lewis"];
-const ANNOUNCER = "am_onyx"; // deep, resonant
+const FEMALE: VoiceId[] = ["en_US-amy-medium", "en_US-hfc_female-medium"];
+const MALE: VoiceId[] = ["en_US-ryan-medium", "en_US-hfc_male-medium"];
+const ANNOUNCER: VoiceId = "en_GB-northern_english_male-medium";
 
-export function kokoroVoice(opts: SpeakOptions): string {
+/** The voice warmed up first (also a speaker voice). */
+export const PIPER_DEFAULT: VoiceId = "en_US-ryan-medium";
+
+/** Every voice the broadcast can use, for background prefetching. */
+export const PIPER_VOICES: VoiceId[] = [...new Set([...FEMALE, ...MALE, ANNOUNCER])];
+
+export function piperVoice(opts: SpeakOptions): VoiceId {
   if (opts.kind === "announcer") return ANNOUNCER;
   const list = opts.gender === "female" ? FEMALE : MALE;
-  return list[(opts.persona ?? 0) % list.length] as string;
+  return list[(opts.persona ?? 0) % list.length] as VoiceId;
 }

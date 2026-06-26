@@ -1,48 +1,45 @@
-// Unified voice: prefers the neural voice (Kokoro/WebGPU) once it has loaded,
-// and uses the browser's Web Speech voice everywhere else and while loading.
+// Unified voice: a high-quality Piper (WASM, CPU) voice once it has loaded, with
+// the browser's Web Speech voice as the immediate, universal fallback. No WebGPU.
 
-import { NeuralVoice } from "./neural.ts";
-import { Voice } from "./speech.ts";
-import type { SpeakOptions } from "./speech.ts";
+import { PiperVoice } from "./piper.ts";
+import { WebSpeechVoice } from "./speech.ts";
+import type { SpeakOptions } from "./types.ts";
 
-export type { SpeakOptions } from "./speech.ts";
+export type { SpeakOptions } from "./types.ts";
 
 export class VoiceEngine {
-  private readonly web = new Voice();
-  private readonly neural = new NeuralVoice();
-  private neuralReady = false;
+  private readonly web = new WebSpeechVoice();
+  private readonly piper = new PiperVoice();
   enabled = false;
 
   get available(): boolean {
-    return this.web.available || NeuralVoice.supported();
+    return PiperVoice.supported() || this.web.usable;
   }
 
-  /** Must be called from a user gesture. Starts loading the neural voice. */
+  /** Must be called from a user gesture. Unlocks audio and starts loading Piper. */
   enable(): void {
     if (this.enabled) return;
     this.enabled = true;
-    this.web.enable();
-    if (NeuralVoice.supported()) {
-      this.neural.unlock(); // create/resume AudioContext inside the gesture
-      void this.neural.load().then((ok) => {
-        this.neuralReady = ok;
-      });
+    this.web.unlock();
+    if (PiperVoice.supported()) {
+      this.piper.unlock();
+      void this.piper.init();
     }
   }
 
-  /** True once the upgraded neural voice is active and healthy. */
-  get usingNeural(): boolean {
-    return this.neuralReady && this.neural.ready && this.neural.healthy;
+  /** True once the upgraded Piper voice is active. */
+  get usingPiper(): boolean {
+    return this.piper.usable;
   }
 
-  speak(text: string, opts: SpeakOptions, onEnd?: () => void): void {
+  speak(text: string, opts: SpeakOptions, onEnd: () => void): void {
     if (!this.enabled) {
-      onEnd?.();
+      onEnd();
       return;
     }
-    if (this.usingNeural) {
+    if (this.piper.usable) {
       this.web.cancel();
-      void this.neural.speak(text, opts, onEnd);
+      this.piper.speak(text, opts, onEnd);
     } else {
       this.web.speak(text, opts, onEnd);
     }
@@ -50,6 +47,6 @@ export class VoiceEngine {
 
   cancel(): void {
     this.web.cancel();
-    this.neural.cancel();
+    this.piper.cancel();
   }
 }

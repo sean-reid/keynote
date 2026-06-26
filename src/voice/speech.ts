@@ -1,25 +1,18 @@
 // Best-effort speech via the browser's built-in Web Speech API. This is the
-// zero-cost, zero-download voice path that works everywhere; a neural voice can
-// be layered on later for capable devices. Captions remain the source of truth,
-// so if the audio drifts or is muted, the broadcast still reads correctly.
+// zero-cost, zero-download fallback that works everywhere. Captions remain the
+// source of truth, so if the audio drifts or is muted, the broadcast still reads.
 
-export type VoiceKind = "announcer" | "speaker";
-
-export interface SpeakOptions {
-  kind: VoiceKind;
-  persona?: number;
-  gender?: "male" | "female";
-}
+import type { SpeakOptions, VoiceProvider } from "./types.ts";
 
 const MALE_HINTS = /\b(male|david|daniel|alex|fred|james|george|guy|aaron|arthur|rishi|reed)\b/i;
 const FEMALE_HINTS = /\b(female|samantha|victoria|karen|tessa|moira|fiona|serena|zira|susan)\b/i;
 
-export class Voice {
+export class WebSpeechVoice implements VoiceProvider {
   private synth: SpeechSynthesis | null =
     typeof window !== "undefined" && "speechSynthesis" in window ? window.speechSynthesis : null;
   private voices: SpeechSynthesisVoice[] = [];
   private current: SpeechSynthesisUtterance | null = null;
-  enabled = false;
+  private enabled = false;
 
   constructor() {
     if (!this.synth) return;
@@ -30,12 +23,12 @@ export class Voice {
     this.synth.addEventListener("voiceschanged", load);
   }
 
-  get available(): boolean {
-    return this.synth !== null;
+  get usable(): boolean {
+    return this.synth !== null && this.enabled;
   }
 
   /** Must be called from a user gesture to satisfy autoplay policies. */
-  enable(): void {
+  unlock(): void {
     if (!this.synth || this.enabled) return;
     this.enabled = true;
     // A silent priming utterance unlocks audio on iOS/Safari.
@@ -44,14 +37,18 @@ export class Voice {
     this.synth.speak(u);
   }
 
+  init(): Promise<boolean> {
+    return Promise.resolve(this.synth !== null);
+  }
+
   cancel(): void {
     this.current = null;
     this.synth?.cancel();
   }
 
-  speak(text: string, opts: SpeakOptions, onEnd?: () => void): void {
+  speak(text: string, opts: SpeakOptions, onEnd: () => void): void {
     if (!this.synth || !this.enabled || !text) {
-      onEnd?.();
+      onEnd();
       return;
     }
     this.synth.cancel();
@@ -73,7 +70,7 @@ export class Voice {
     this.current = u;
     u.addEventListener("end", () => {
       if (this.current === u) this.current = null;
-      onEnd?.();
+      onEnd();
     });
     this.synth.speak(u);
   }
