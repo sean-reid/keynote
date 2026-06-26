@@ -11,6 +11,7 @@ import { join } from "node:path";
 import type { SpeechEngine } from "../../src/grammar/engine.ts";
 import type { AudioSegment, SceneManifest } from "../../src/audio/manifest.ts";
 import { Rng } from "../../src/grammar/rng.ts";
+import { OUTRO_BEATS } from "../../src/grammar/beats.ts";
 import { END_APPLAUSE_MS } from "../../src/sync/clock.ts";
 import { ANNOUNCER, speakerVoice } from "./voices.ts";
 import { synth } from "./piper.ts";
@@ -87,37 +88,58 @@ export function buildScene(
   append(introWav, "intro", scene.intro.text, -1);
   applause(SHORT_APPLAUSE);
 
-  // Reserve a window for the closing ovation so the speaker is never cut for it.
   const speakLimit = Math.max(cursor, unitMs - END_APPLAUSE_MS);
-
-  // Speaker phrases, filling the speaking window by real audio duration. A phrase
-  // is only added if it finishes before the ovation, so the speaker is never cut.
-  // Applause after a flagged line is deferred to the next phrase, so the final
-  // line's clap merges into the closing ovation instead of playing as a separate
-  // short burst right before it.
   const voiceId = speakerVoice(scene.speaker.gender, scene.speaker.persona).id;
+
+  // Split the keynote's wrap-up (call to action + gratitude) from the body so it
+  // is always delivered, even though the body is over-generated to fill the slot.
+  const isOutro = new Set<string>(OUTRO_BEATS);
+  const body = scene.utterances.filter((u) => !isOutro.has(u.beat));
+  const outro = scene.utterances.filter((u) => isOutro.has(u.beat));
+
+  // Pre-synthesize the wrap-up so we know exactly how much room to leave for it.
+  const wrapUp = outro.map((u, k) => {
+    const wav = join(tmp, `o${k}.wav`);
+    synth(u.text, voiceId, wav);
+    return { u, wav, dur: durationMs(wav) };
+  });
+  const wrapUpMs = wrapUp.reduce((sum, p) => sum + p.dur, 0);
+  const bodyLimit = Math.max(cursor, speakLimit - wrapUpMs);
+
+  // Body phrases, filling to the body limit by real audio duration. Applause
+  // after a flagged line is deferred to the next phrase, so it never plays as a
+  // short burst right before the next clip.
   let spoken = 0;
   let pendingApplause = false;
-  for (let i = 0; i < scene.utterances.length && cursor < speakLimit; i++) {
-    const u = scene.utterances[i];
+  for (let i = 0; i < body.length && cursor < bodyLimit; i++) {
+    const u = body[i];
     if (!u) break;
     if (pendingApplause) {
       applause(SHORT_APPLAUSE);
       pendingApplause = false;
-      if (cursor >= speakLimit) break;
+      if (cursor >= bodyLimit) break;
     }
     const wav = join(tmp, `u${i}.wav`);
     synth(u.text, voiceId, wav);
     const dur = durationMs(wav);
-    if (spoken > 0 && cursor + dur > speakLimit) break;
+    if (spoken > 0 && cursor + dur > bodyLimit) break;
     append(wav, "speech", u.text, i, dur);
     spoken++;
     pendingApplause = u.applause;
   }
 
-  // A single closing ovation clip (no looping, which sounds like a short clip on
-  // repeat). A brief settle before the next speaker is fine; the broadcast clock
-  // holds the last frame to the unit boundary.
+  // The wrap-up, always spoken in full so every keynote closes the same way.
+  for (const p of wrapUp) {
+    if (pendingApplause) {
+      applause(SHORT_APPLAUSE);
+      pendingApplause = false;
+    }
+    append(p.wav, "speech", p.u.text, -1, p.dur);
+    pendingApplause = p.u.applause;
+  }
+
+  // A single closing ovation clip (no looping). The gratitude line's applause
+  // flag is intentionally left to the ovation rather than a separate short clip.
   applause(LONG_APPLAUSE);
 
   const outMp3 = join(outDir, `${sceneIndex}.mp3`);
