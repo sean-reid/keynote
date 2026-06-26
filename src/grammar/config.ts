@@ -1,8 +1,11 @@
 // Shared timing constants. The sync layer and the engine must agree on these so
 // that mapping a wall-clock instant to a scene gives the same answer everywhere.
 
-/** Target speaking length of one scene (one speaker's keynote), in ms (~30 min). */
-export const SPEAKING_MS = 30 * 60 * 1000;
+/** Nominal speaking length of one keynote (~10 min); also the engine default. */
+export const SPEAKING_MS = 10 * 60 * 1000;
+/** Each scene's speaking length varies deterministically within this band. */
+export const SPEAKING_MIN_MS = 8 * 60 * 1000;
+export const SPEAKING_MAX_MS = 12 * 60 * 1000;
 
 /** The end-of-scene applause before the next speaker, in ms. */
 export const APPLAUSE_MIN_MS = 4_000;

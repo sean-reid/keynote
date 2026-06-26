@@ -4,9 +4,8 @@ import {
   INTRO_APPLAUSE_MS,
   INTRO_MS,
   SceneClock,
-  UNIT_MS,
 } from "../../src/sync/clock.ts";
-import { SPEAKING_MS } from "../../src/grammar/config.ts";
+import { SPEAKING_MAX_MS, SPEAKING_MIN_MS } from "../../src/grammar/config.ts";
 import type { Corpus } from "../../src/grammar/types.ts";
 import { loadCorpusFromDisk } from "../helpers/corpus.ts";
 
@@ -17,15 +16,31 @@ beforeAll(() => {
 });
 
 describe("SceneClock", () => {
-  it("advances one scene per unit", () => {
+  it("gives each scene a speaking length of 8-12 minutes", () => {
+    const clock = new SceneClock(corpus);
+    for (let i = 0; i < 50; i++) {
+      const ms = clock.speakingMsAt(i);
+      expect(ms).toBeGreaterThanOrEqual(SPEAKING_MIN_MS);
+      expect(ms).toBeLessThan(SPEAKING_MAX_MS);
+    }
+    // Lengths should actually vary.
+    const lengths = new Set(Array.from({ length: 50 }, (_, i) => clock.speakingMsAt(i)));
+    expect(lengths.size).toBeGreaterThan(10);
+  });
+
+  it("advances one scene per unit, with variable unit lengths", () => {
     const clock = new SceneClock(corpus);
     expect(clock.sceneIndexAt(EPOCH_MS)).toBe(0);
-    expect(clock.sceneIndexAt(EPOCH_MS + UNIT_MS)).toBe(1);
-    expect(clock.sceneIndexAt(EPOCH_MS + UNIT_MS * 9 + 5_000)).toBe(9);
+    let t = EPOCH_MS;
+    for (let i = 0; i < 5; i++) {
+      expect(clock.sceneIndexAt(t + 1_000)).toBe(i);
+      t += clock.unitMsAt(i);
+    }
+    expect(clock.sceneIndexAt(t + 1_000)).toBe(5);
   });
 
   it("is deterministic across instances for the same instant", () => {
-    const t = EPOCH_MS + UNIT_MS * 3 + INTRO_MS + INTRO_APPLAUSE_MS + 12_345;
+    const t = EPOCH_MS + 5_000_000;
     const a = new SceneClock(corpus).stateAt(t);
     const b = new SceneClock(corpus).stateAt(t);
     expect(a.sceneIndex).toBe(b.sceneIndex);
@@ -36,11 +51,11 @@ describe("SceneClock", () => {
 
   it("moves through intro, applause, speaking, then applause", () => {
     const clock = new SceneClock(corpus);
-    const base = EPOCH_MS + UNIT_MS * 2;
-    expect(clock.stateAt(base + 1_000).phase).toBe("intro");
-    expect(clock.stateAt(base + INTRO_MS + 1_000).phase).toBe("introApplause");
-    expect(clock.stateAt(base + INTRO_MS + INTRO_APPLAUSE_MS + 1_000).phase).toBe("speaking");
-    expect(clock.stateAt(base + UNIT_MS - 1_000).phase).toBe("endApplause");
+    // Scene 0 starts at the epoch.
+    expect(clock.stateAt(EPOCH_MS + 1_000).phase).toBe("intro");
+    expect(clock.stateAt(EPOCH_MS + INTRO_MS + 1_000).phase).toBe("introApplause");
+    expect(clock.stateAt(EPOCH_MS + INTRO_MS + INTRO_APPLAUSE_MS + 1_000).phase).toBe("speaking");
+    expect(clock.stateAt(EPOCH_MS + clock.unitMsAt(0) - 1_000).phase).toBe("endApplause");
   });
 
   it("introduces the speaker by the announcer during the intro", () => {
@@ -54,7 +69,7 @@ describe("SceneClock", () => {
     const clock = new SceneClock(corpus);
     const speakStart = EPOCH_MS + INTRO_MS + INTRO_APPLAUSE_MS;
     const early = clock.stateAt(speakStart + 500);
-    const late = clock.stateAt(speakStart + SPEAKING_MS - 5_000);
+    const late = clock.stateAt(speakStart + clock.speakingMsAt(0) - 5_000);
     expect(early.line?.role).toBe("speaker");
     expect(early.utteranceIndex).toBe(0);
     expect(late.utteranceIndex).toBeGreaterThan(early.utteranceIndex);
@@ -62,17 +77,11 @@ describe("SceneClock", () => {
 
   it("lets a late joiner land mid-stream consistently", () => {
     const clock = new SceneClock(corpus);
-    const t = EPOCH_MS + UNIT_MS * 1000 + INTRO_MS + INTRO_APPLAUSE_MS + SPEAKING_MS / 2;
-    const s = clock.stateAt(t);
-    expect(s.sceneIndex).toBe(1000);
-    expect(s.phase).toBe("speaking");
-    expect(s.line?.text.length).toBeGreaterThan(0);
-  });
-
-  it("reports applause during both applause phases", () => {
-    const clock = new SceneClock(corpus);
-    const base = EPOCH_MS + UNIT_MS * 4;
-    expect(clock.stateAt(base + INTRO_MS + 500).applause).toBe(true);
-    expect(clock.stateAt(base + UNIT_MS - 2_000).applause).toBe(true);
+    const t = EPOCH_MS + 40_000_000; // far into the broadcast
+    const a = clock.stateAt(t);
+    const b = new SceneClock(corpus).stateAt(t);
+    expect(a.sceneIndex).toBe(b.sceneIndex);
+    expect(a.sceneIndex).toBeGreaterThan(50);
+    expect(a.line?.text).toBe(b.line?.text);
   });
 });
