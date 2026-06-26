@@ -1,6 +1,7 @@
-// Compute which scenes to precompute. Without flags, prints the scene index that
-// is live right now. With --plan, prints a JSON matrix of {from,to} shards
-// covering [now, now+count) for the GitHub Actions matrix.
+// Compute which scenes to precompute. Without flags, prints the scene index live
+// right now. With --plan, prints a JSON matrix of {from,to} shards covering only
+// the gap between what already exists and the buffer we want kept ahead of live,
+// so scheduled runs generate just the new scenes and always stay ahead.
 
 import { sceneIndexAtTime } from "../../src/sync/clock.ts";
 
@@ -11,17 +12,38 @@ function arg(name: string, fallback: string): string {
 
 const base = sceneIndexAtTime(Date.now());
 
-if (process.argv.includes("--plan")) {
-  const count = Number(arg("count", "144"));
-  const shards = Number(arg("shards", "12"));
-  const per = Math.ceil(count / shards);
-  const matrix: Array<{ from: number; to: number }> = [];
-  for (let i = 0; i < shards; i++) {
-    const from = base + i * per;
-    const to = Math.min(base + count - 1, from + per - 1);
-    if (from <= to) matrix.push({ from, to });
-  }
-  process.stdout.write(JSON.stringify(matrix));
-} else {
+if (!process.argv.includes("--plan")) {
   process.stdout.write(String(base));
+} else {
+  const buffer = Number(arg("count", "288")); // scenes to keep ready ahead of live
+  const shards = Number(arg("shards", "12"));
+  const catalogUrl =
+    process.env.KEYNOTE_CATALOG_URL ?? "https://keynote.dwainosaur.com/audio/index.json";
+
+  // Discover how far content already reaches, so we only generate beyond it.
+  let have = base - 1;
+  try {
+    const res = await fetch(catalogUrl, { signal: AbortSignal.timeout(10000) });
+    if (res.ok) {
+      const data = (await res.json()) as { max?: number };
+      if (typeof data.max === "number" && data.max >= base) have = data.max;
+    }
+  } catch {
+    // No reachable catalog (e.g. first ever run); generate the buffer from live.
+  }
+
+  const start = Math.max(base, have + 1);
+  const end = base + buffer - 1;
+  const matrix: Array<{ from: number; to: number }> = [];
+  if (start <= end) {
+    const per = Math.ceil((end - start + 1) / shards);
+    for (let i = 0; i < shards; i++) {
+      const from = start + i * per;
+      const to = Math.min(end, from + per - 1);
+      if (from <= to) matrix.push({ from, to });
+    }
+  }
+  // Actions rejects an empty matrix; refresh the live scene when nothing is due.
+  if (matrix.length === 0) matrix.push({ from: base, to: base });
+  process.stdout.write(JSON.stringify(matrix));
 }

@@ -2,12 +2,14 @@ name: Precompute audio
 
 on:
   schedule:
-    - cron: "0 6 * * *" # daily, ahead of the day
+    # Every 3 hours: each run tops up only the small gap since the last one, so a
+    # single failure is recovered by the next run minutes later.
+    - cron: "0 */3 * * *"
   workflow_dispatch:
     inputs:
       count:
-        description: "How many upcoming scenes to generate"
-        default: "144"
+        description: "Scenes to keep ready ahead of live"
+        default: "288"
 
 concurrency:
   group: precompute-audio
@@ -25,7 +27,7 @@ jobs:
           node-version: 24
       - id: plan
         run: |
-          COUNT="${{ github.event.inputs.count || '144' }}"
+          COUNT="${{ github.event.inputs.count || '288' }}"
           MATRIX=$(node scripts/precompute/range.ts --plan --count "$COUNT" --shards 12)
           echo "matrix={\"include\":$MATRIX}" >> "$GITHUB_OUTPUT"
 
@@ -124,14 +126,23 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         if: ${{ env.AWS_ACCESS_KEY_ID != '' }}
         run: |
-          # Derive the live window from everything currently in the bucket, so the
-          # client knows which scenes exist (and can loop them if we fall behind).
+          # Catalog the bucket, evict scenes that have fallen well behind live so
+          # storage stays bounded, then publish the live window for the client.
           ENDPOINT="https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com"
           aws s3 ls "s3://$R2_BUCKET/audio/" --endpoint-url "$ENDPOINT" \
             | grep -oE '[0-9]+\.mp3' | sed 's/\.mp3$//' | sort -n > scenes.txt
           if [ ! -s scenes.txt ]; then echo "no scenes in bucket"; exit 0; fi
-          MIN=$(head -1 scenes.txt)
           MAX=$(tail -1 scenes.txt)
+          KEEP=360
+          CUTOFF=$((MAX - KEEP))
+          # Delete scenes older than the retention window (mp3 + manifest).
+          awk -v c="$CUTOFF" '$1 < c' scenes.txt | while read -r n; do
+            [ -n "$n" ] || continue
+            aws s3 rm "s3://$R2_BUCKET/audio/$n.mp3" --endpoint-url "$ENDPOINT" >/dev/null 2>&1 || true
+            aws s3 rm "s3://$R2_BUCKET/audio/$n.json" --endpoint-url "$ENDPOINT" >/dev/null 2>&1 || true
+          done
+          MIN=$(awk -v c="$CUTOFF" '$1 >= c' scenes.txt | head -1)
+          [ -n "$MIN" ] || MIN=$(head -1 scenes.txt)
           printf '{"version":1,"min":%s,"max":%s}' "$MIN" "$MAX" > index.json
           cat index.json
           aws s3 cp index.json "s3://$R2_BUCKET/audio/index.json" \
