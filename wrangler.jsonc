@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "keynote",
+  "main": "worker/index.ts",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "r2_buckets": [
+    { "binding": "KEYNOTE_AUDIO", "bucket_name": "keynote-audio" }
+  ],
+  "routes": [
+    { "pattern": "keynote.dwainosaur.com", "custom_domain": true }
+  ],
+  "observability": { "enabled": true }
+}
