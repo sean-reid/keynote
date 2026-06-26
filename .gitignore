@@ -15,9 +15,3 @@ test-results/
 .idea/
 .vscode/
 *.log
-
-# Local agent + assistant config (never published)
-.claude/
-CLAUDE.md
-.cursor/
-.aider*
