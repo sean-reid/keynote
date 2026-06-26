@@ -1,17 +1,19 @@
 {
-  "firstNames": [
-    "Alex", "Jordan", "Priya", "Marcus", "Lena", "Diego", "Sasha", "Wei", "Noor", "Tomas",
-    "Kira", "Ravi", "Mara", "Sven", "Yuki", "Imani", "Dmitri", "Elena", "Kofi", "Hana",
-    "Nina", "Omar", "Sofia", "Ezra", "Aisha", "Leo", "Tara", "Bjorn", "Maya", "Anton",
-    "Camila", "Idris", "Freya", "Hassan", "Mei", "Gabriel", "Zara", "Lukas", "Amara", "Theo",
-    "Ingrid", "Mateo", "Yara", "Soren", "Lucia", "Kenji", "Adaeze", "Niko", "Farah", "Emil",
-    "Anaya", "Rohan", "Greta", "Tariq", "Saoirse", "Bao", "Daniela", "Arjun", "Liv", "Mohammed",
-    "Chiara", "Felix", "Nadia", "Hiroshi", "Olwen", "Sami", "Beatriz", "Viktor", "Leila", "Caleb",
-    "Anika", "Pablo", "Sinead", "Wen", "Amani", "Markus", "Rin", "Tobias", "Zoe", "Hugo",
-    "Esme", "Dawit", "Paloma", "Stefan", "Mira", "Cyrus", "Ondine", "Bram", "Salma", "Quentin",
-    "Anneke", "Raj", "Suki", "Yusuf", "Carmen", "Lars", "Devika", "Mads", "Inez", "Casper",
-    "Talia", "Jin", "Renata", "Otto", "Naledi", "Pieter", "Asha", "Milo", "Sera", "Bashir",
-    "Cleo", "Jakob", "Indira", "Henrik", "Wren", "Said", "Marisol", "Aki", "Petra", "Elias"
+  "firstNamesMale": [
+    "Alex", "Jordan", "Marcus", "Diego", "Wei", "Tomas", "Ravi", "Sven", "Dmitri", "Kofi",
+    "Omar", "Ezra", "Leo", "Bjorn", "Anton", "Idris", "Hassan", "Gabriel", "Lukas", "Theo",
+    "Mateo", "Soren", "Kenji", "Niko", "Emil", "Rohan", "Tariq", "Arjun", "Mohammed", "Felix",
+    "Hiroshi", "Sami", "Viktor", "Caleb", "Pablo", "Yusuf", "Lars", "Mads", "Casper", "Jin",
+    "Otto", "Pieter", "Milo", "Bashir", "Jakob", "Henrik", "Said", "Elias", "Dawit", "Stefan",
+    "Bram", "Cyrus", "Quentin", "Raj", "Hugo", "Markus", "Tobias", "Hans", "Aki"
+  ],
+  "firstNamesFemale": [
+    "Priya", "Lena", "Sasha", "Yuki", "Imani", "Elena", "Hana", "Nina", "Sofia", "Aisha",
+    "Tara", "Maya", "Camila", "Freya", "Mei", "Zara", "Amara", "Ingrid", "Yara", "Lucia",
+    "Adaeze", "Greta", "Saoirse", "Daniela", "Liv", "Chiara", "Nadia", "Olwen", "Beatriz", "Leila",
+    "Anika", "Sinead", "Amani", "Zoe", "Esme", "Paloma", "Mira", "Ondine", "Salma", "Anneke",
+    "Suki", "Carmen", "Devika", "Inez", "Talia", "Renata", "Naledi", "Asha", "Sera", "Cleo",
+    "Indira", "Wren", "Marisol", "Petra", "Kira", "Noor", "Mara"
   ],
   "lastNames": [
     "Chen", "Okafor", "Patel", "Nakamura", "Larsson", "Reyes", "Volkov", "Mbeki", "Singh",
@@ -22,11 +24,8 @@
     "Holm", "Vasquez", "Eriksen", "Kaur", "Marchetti", "Nakashima", "Bauer", "Cohen", "Osei",
     "Petersen", "Ramachandran", "Sokolov", "Bergstrom", "Ali", "Ng", "Hoffmann", "Antonelli",
     "Mukherjee", "Lindgren", "Achebe", "Takahashi", "Garcia", "Janssen", "Petit", "Wong",
-    "Karlsson", "El-Sayed", "Novakova", "Becker", "Fontaine", "Iwu", "Hassan", "Andersen",
-    "Cardoso", "Voss", "Sharma", "Lombardi", "Jansen", "Mwangi", "Steiner", "Ortega", "Lim",
-    "Hertz", "Nakamoto", "Bello", "Vihlborg", "Aslan", "Russo", "Petrosyan", "Choi", "Falk",
-    "Dlamini", "Renner", "Sandoval", "Virtanen", "Yusupova", "Greco", "Owusu", "Halvorsen",
-    "Mahmood", "Brandt", "Esposito", "Lindholm", "Adebayo", "Krause", "Vega", "Suzuki", "Haas"
+    "Karlsson", "El-Sayed", "Becker", "Fontaine", "Iwu", "Hassan", "Andersen",
+    "Cardoso", "Voss", "Sharma", "Lombardi", "Jansen", "Mwangi", "Steiner", "Ortega", "Lim"
   ],
   "titles": [
     "Founder & CEO", "Chief Executive Officer", "Co-Founder & CEO", "Chief Technology Officer",

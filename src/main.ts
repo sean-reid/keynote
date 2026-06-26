@@ -77,10 +77,14 @@ function tick(): void {
     spokenText = line.text;
     speaking = true;
     const speakingPhase = cs.phase === "speaking";
-    voice.speak(line.text, { kind: line.role, persona: cs.scene.speaker.persona }, () => {
-      speaking = false;
-      if (speakingPhase) playhead = Math.min(cs.scene.utterances.length - 1, playhead + 1);
-    });
+    voice.speak(
+      line.text,
+      { kind: line.role, persona: cs.scene.speaker.persona, gender: cs.scene.speaker.gender },
+      () => {
+        speaking = false;
+        if (speakingPhase) playhead = Math.min(cs.scene.utterances.length - 1, playhead + 1);
+      },
+    );
   }
 }
 

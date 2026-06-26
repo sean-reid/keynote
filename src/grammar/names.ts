@@ -51,12 +51,15 @@ export function coinTagline(rng: Rng, topic: LexCategory): string {
   return capitalize(rng.pick(source)) + ".";
 }
 
-/** Invent the presenter for a scene: name, title, and a stable persona seed. */
+/** Invent the presenter for a scene: name, title, gender, and a persona seed. */
 export function coinSpeaker(rng: Rng, presenters: Presenters): Speaker {
-  const name = `${rng.pick(presenters.firstNames)} ${rng.pick(presenters.lastNames)}`;
+  const gender: "male" | "female" = rng.chance(0.5) ? "male" : "female";
+  const firstNames =
+    gender === "male" ? presenters.firstNamesMale : presenters.firstNamesFemale;
+  const name = `${rng.pick(firstNames)} ${rng.pick(presenters.lastNames)}`;
   const title = rng.pick(presenters.titles);
   const persona = rng.int(1_000_000);
-  return { name, title, persona };
+  return { name, title, gender, persona };
 }
 
 /** Fill an announcer introduction template for a given speaker and company. */

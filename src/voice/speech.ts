@@ -8,6 +8,7 @@ export type VoiceKind = "announcer" | "speaker";
 interface SpeakOptions {
   kind: VoiceKind;
   persona?: number;
+  gender?: "male" | "female";
 }
 
 const MALE_HINTS = /\b(male|david|daniel|alex|fred|james|george|guy|aaron|arthur|rishi|reed)\b/i;
@@ -58,14 +59,16 @@ export class Voice {
     const voice = this.pickVoice(opts);
     if (voice) u.voice = voice;
 
+    const p = opts.persona ?? 0;
     if (opts.kind === "announcer") {
       u.pitch = 0.6; // deep, off-camera announcer
       u.rate = 0.96;
+    } else if (opts.gender === "female") {
+      u.pitch = 1.05 + ((p % 40) / 40) * 0.35;
+      u.rate = 0.95 + ((Math.floor(p / 40) % 20) / 20) * 0.16;
     } else {
-      // Vary per speaker so each keynote sounds like a different person.
-      const p = opts.persona ?? 0;
-      u.pitch = 0.85 + ((p % 50) / 50) * 0.7;
-      u.rate = 0.94 + ((Math.floor(p / 50) % 20) / 20) * 0.18;
+      u.pitch = 0.78 + ((p % 40) / 40) * 0.22;
+      u.rate = 0.94 + ((Math.floor(p / 40) % 20) / 20) * 0.16;
     }
     this.current = u;
     u.addEventListener("end", () => {
@@ -84,10 +87,11 @@ export class Voice {
       return pool.find((v) => MALE_HINTS.test(v.name)) ?? (pool[0] as SpeechSynthesisVoice);
     }
     const persona = opts.persona ?? 0;
-    // Prefer a varied voice, leaning on whatever the platform offers.
     const ranked = [...pool].sort((a, b) => a.name.localeCompare(b.name));
-    const preferred = ranked.filter((v) => MALE_HINTS.test(v.name) || FEMALE_HINTS.test(v.name));
-    const list = preferred.length > 1 ? preferred : ranked;
+    // Match the voice to the speaker's gender so the name and voice agree.
+    const hint = opts.gender === "female" ? FEMALE_HINTS : MALE_HINTS;
+    const matched = ranked.filter((v) => hint.test(v.name));
+    const list = matched.length > 0 ? matched : ranked;
     return list[persona % list.length] as SpeechSynthesisVoice;
   }
 }

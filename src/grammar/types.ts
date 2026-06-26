@@ -44,7 +44,8 @@ export interface RhetoricCategory extends LexCategory {
 
 /** The pool of presenter identities (data/presenters.json). */
 export interface Presenters {
-  firstNames: string[];
+  firstNamesMale: string[];
+  firstNamesFemale: string[];
   lastNames: string[];
   titles: string[];
 }
@@ -97,6 +98,7 @@ export interface Utterance {
 export interface Speaker {
   name: string;
   title: string;
+  gender: "male" | "female";
   /** Stable seed for avatar/voice variation, so each speaker looks/sounds distinct. */
   persona: number;
 }
