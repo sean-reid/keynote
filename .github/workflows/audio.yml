@@ -29,8 +29,25 @@ jobs:
           MATRIX=$(node scripts/precompute/range.ts --plan --count "$COUNT" --shards 12)
           echo "matrix={\"include\":$MATRIX}" >> "$GITHUB_OUTPUT"
 
+  # Download every voice once into the shared cache, so the matrix shards below
+  # restore it instead of each pulling ~1GB from Hugging Face in parallel.
+  models:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Cache Piper voice models
+        uses: actions/cache@v4
+        with:
+          path: data/.piper-models
+          key: piper-voices-${{ hashFiles('scripts/precompute/voices.ts') }}
+      - name: Download voice models
+        run: node scripts/precompute/download-voices.ts
+
   generate:
-    needs: plan
+    needs: [plan, models]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
