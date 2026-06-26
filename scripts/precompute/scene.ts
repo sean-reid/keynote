@@ -4,16 +4,26 @@
 // REAL audio duration so the scene stays within a fixed wall-clock unit.
 
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { SpeechEngine } from "../../src/grammar/engine.ts";
 import type { AudioSegment, SceneManifest } from "../../src/audio/manifest.ts";
+import { Rng } from "../../src/grammar/rng.ts";
 import { ANNOUNCER, speakerVoice } from "./voices.ts";
 import { synth } from "./piper.ts";
 
-const APPLAUSE_SHORT = join("data", "audio", "applause", "applause-short.mp3");
-const APPLAUSE_LONG = join("data", "audio", "applause", "applause-long.mp3");
+const APPLAUSE_DIR = join("data", "audio", "applause");
+
+function applauseClips(prefix: string): string[] {
+  return readdirSync(APPLAUSE_DIR)
+    .filter((f) => f.startsWith(prefix) && f.endsWith(".mp3"))
+    .sort()
+    .map((f) => join(APPLAUSE_DIR, f));
+}
+
+const SHORT_APPLAUSE = applauseClips("applause-short-");
+const LONG_APPLAUSE = applauseClips("applause-long-");
 
 function durationMs(file: string): number {
   const out = execFileSync("ffprobe", [
@@ -42,6 +52,7 @@ export function buildScene(
 ): SceneManifest {
   const scene = engine.generateScene(sceneIndex, speakingBudgetMs);
   const tmp = mkdtempSync(join(tmpdir(), `kn-scene-${sceneIndex}-`));
+  const applauseRng = new Rng(`${seed}|applause|${sceneIndex}`);
   const parts: string[] = [];
   const segments: AudioSegment[] = [];
   let cursor = 0;
@@ -53,11 +64,16 @@ export function buildScene(
     parts.push(file);
   };
 
+  // A varied applause clip, chosen deterministically per scene.
+  const applause = (clips: string[]): void => {
+    if (clips.length > 0) append(applauseRng.pick(clips), "applause", "", -1);
+  };
+
   // Announcer introduces the speaker, then a short applause as they walk on.
   const introWav = join(tmp, "intro.wav");
   synth(scene.intro.text, ANNOUNCER.id, introWav);
   append(introWav, "intro", scene.intro.text, -1);
-  append(APPLAUSE_SHORT, "applause", "", -1);
+  applause(SHORT_APPLAUSE);
 
   // Speaker phrases, fitting the speaking budget by real audio duration.
   const voiceId = speakerVoice(scene.speaker.gender, scene.speaker.persona).id;
@@ -68,11 +84,11 @@ export function buildScene(
     const wav = join(tmp, `u${i}.wav`);
     synth(u.text, voiceId, wav);
     append(wav, "speech", u.text, i);
-    if (u.applause) append(APPLAUSE_SHORT, "applause", "", -1);
+    if (u.applause) applause(SHORT_APPLAUSE);
   }
 
   // Closing ovation.
-  append(APPLAUSE_LONG, "applause", "", -1);
+  applause(LONG_APPLAUSE);
 
   const outMp3 = join(outDir, `${sceneIndex}.mp3`);
   concatToMp3(parts, outMp3);
