@@ -4,7 +4,7 @@ import { SceneClock, type ClockState } from "./sync/clock.ts";
 import { syncTime, syncedNow } from "./sync/time.ts";
 import { viewerCount } from "./sync/viewers.ts";
 import { createBroadcast } from "./ui/broadcast.ts";
-import { Voice } from "./voice/speech.ts";
+import { VoiceEngine } from "./voice/index.ts";
 
 const app = document.querySelector<HTMLDivElement>("#app");
 if (!app) throw new Error("missing #app");
@@ -12,7 +12,7 @@ if (!app) throw new Error("missing #app");
 const corpus = loadCorpus();
 const clock = new SceneClock(corpus);
 const view = createBroadcast(app);
-const voice = new Voice();
+const voice = new VoiceEngine();
 
 void syncTime();
 

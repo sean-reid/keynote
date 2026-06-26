@@ -5,7 +5,7 @@
 
 export type VoiceKind = "announcer" | "speaker";
 
-interface SpeakOptions {
+export interface SpeakOptions {
   kind: VoiceKind;
   persona?: number;
   gender?: "male" | "female";
