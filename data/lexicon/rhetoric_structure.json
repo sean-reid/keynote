@@ -203,9 +203,6 @@
     "spark",
     "inspire",
     "imagine",
-    "dream",
-    "dare",
-    "believe",
     "build",
     "create",
     "craft",
@@ -228,7 +225,6 @@
     "celebrate",
     "honor",
     "embrace",
-    "embark",
     "lead",
     "guide",
     "connect",
@@ -432,7 +428,7 @@
     "This is the biggest leap since the #noun# itself.",
     "We #verb# so that you can #verb#.",
     "And that, #audience#, is how you #verb# the #noun#.",
-    "We measured it, and the results were #adjective#: #metric# improvement.",
+    "We measured it, and the results were #adjective#. The improvement? #figure#.",
     "Let's go #verb# the future, together.",
     "Thank you. You've been an absolutely incredible #audience#.",
     "There is a #adjective# #noun# happening right now, and you are part of it.",
@@ -543,7 +539,19 @@
     "Which raises an obvious question.",
     "Before I move on, I want to be really clear about something.",
     "Now, take all of that, and multiply it.",
-    "And just when we thought we were done."
+    "And just when we thought we were done.",
+    "Here's what I keep coming back to:",
+    "And that brings me to this,",
+    "Which is exactly why I want to show you",
+    "So here's where it all comes together,",
+    "And there is one more thing I have to share,",
+    "Now stay with me, because this is the part that matters,",
+    "Let me pull on that thread for a second,",
+    "And that is the question that led us here,",
+    "So let's talk about what that really means,",
+    "Which leaves us with one final piece,",
+    "And honestly, this is the moment I have been building toward,",
+    "Now hold on to that, because it changes how you see everything next,"
   ],
   "whatIf": [
     "What if I told you that #noun# was just the beginning?",
@@ -737,7 +745,19 @@
     "This is what it looks like to put a dent in the universe.",
     "We just gave a billion people a superpower.",
     "Hold your applause. It gets better.",
-    "This is the line everyone will be quoting tomorrow."
+    "This is the line everyone will be quoting tomorrow.",
+    "We didn't predict the future. We just shipped it.",
+    "Everyone said it was impossible. So we did it twice.",
+    "This isn't the next big thing. This is the last small one.",
+    "We didn't move the goalposts. We removed them.",
+    "Tomorrow, the whole industry wakes up behind.",
+    "This is the part where the rest of them start taking notes.",
+    "We built the thing they said would take ten years. It took us eighteen months.",
+    "And it's already in your hands. Right now.",
+    "This is what happens when you stop asking if and start asking how.",
+    "We didn't break the rules. We wrote new ones.",
+    "History is going to remember this room.",
+    "And we are only on chapter one."
   ],
   "rhetoricalQuestions": [
     "How do we get there? I'm so glad you asked.",
@@ -801,7 +821,17 @@
     "It's the difference between shouting into the void and being heard.",
     "Imagine the #noun#, but it folds neatly into your day.",
     "It's like a telescope and a microscope, in the same #noun#.",
-    "Think of it as the front door to the #adjective# future."
+    "Think of it as the front door to the #adjective# future.",
+    "It's the #noun# you'd design if you could start over from scratch.",
+    "Think of it as autopilot for the #adjective# #noun#.",
+    "It's like handing every #audience# a #adjective# head start.",
+    "Picture the #noun# as a living thing that #verbs# while you sleep.",
+    "It's the difference between a candle and the sun.",
+    "Think of it as the assembly line for #nounPlural#.",
+    "It's like a GPS for the #adjective# era, recalculating in real time.",
+    "Imagine the #noun#, but it disappears into the background and just works.",
+    "It's the universal translator for #nounPlural#.",
+    "Think of it as a lighthouse in a sea of #nounPlural#."
   ],
   "anecdoteFrames": [
     "A few weeks ago, an engineer on our team came to me and said...",
@@ -929,7 +959,19 @@
     "and that's not all.",
     "more on that in a moment.",
     "remember that.",
-    "this is key."
+    "this is key.",
+    "and here's the thing,",
+    "but make no mistake,",
+    "let's be honest,",
+    "here's what's wild,",
+    "and best of all,",
+    "candidly,",
+    "for context,",
+    "in other words,",
+    "and not by accident,",
+    "which is huge,",
+    "and i mean that,",
+    "so picture this,"
   ],
   "callbackPhrases": [
     "the platform",
@@ -972,7 +1014,10 @@
     "innovators",
     "developers",
     "engineers",
-    "teams"
+    "teams",
+    "makers",
+    "creators",
+    "technologists"
   ],
   "metricTemplates": [
     "And the numbers speak for themselves: #figure#. That is #product# in production today.",
@@ -980,6 +1025,16 @@
     "#figure#. That is not a projection. That is what #product# is doing right now.",
     "Here is the number that keeps me up at night, in the best way: #figure#.",
     "The early data is staggering. #figure#, and the curve is still bending.",
-    "Let me put a number on it. #figure#. Let that sink in."
+    "Let me put a number on it. #figure#. Let that sink in.",
+    "#figure#. Let that sink in.",
+    "The number that matters? #figure#.",
+    "We hit #figure#. In production. Today.",
+    "So how big is it, really? #figure#.",
+    "I'll just leave this right here: #figure#.",
+    "Read that number again. #figure#.",
+    "And no, that is not a typo. #figure#.",
+    "One number tells the whole story. #figure#.",
+    "We ran the benchmark, and it came back at #figure#.",
+    "Here is what changed everything: #figure#."
   ]
 }
