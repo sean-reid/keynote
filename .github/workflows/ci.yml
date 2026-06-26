@@ -33,3 +33,25 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test --project=desktop
+
+  # Deploy the Worker once the build is green. Only on pushes to main, and only
+  # when the Cloudflare token is configured (skips cleanly on forks/PRs).
+  deploy:
+    needs: [verify, e2e]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Build and deploy Worker
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' }}
+        run: |
+          npm run build
+          npx wrangler deploy
