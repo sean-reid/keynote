@@ -37,3 +37,14 @@ export interface SceneManifest {
   durationMs: number;
   segments: AudioSegment[];
 }
+
+/** Catalogue of the scenes currently available in storage. The client reads it
+ * to know the live window and to loop existing content if the pipeline ever
+ * falls behind the broadcast clock. */
+export interface BroadcastIndex {
+  version: 1;
+  /** Lowest scene index available. */
+  min: number;
+  /** Highest scene index available. */
+  max: number;
+}

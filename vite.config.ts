@@ -6,8 +6,8 @@ export default defineConfig({
     alias: {
       "@grammar": fileURLToPath(new URL("./src/grammar", import.meta.url)),
       "@sync": fileURLToPath(new URL("./src/sync", import.meta.url)),
-      "@voice": fileURLToPath(new URL("./src/voice", import.meta.url)),
-      "@avatar": fileURLToPath(new URL("./src/avatar", import.meta.url)),
+      "@audio": fileURLToPath(new URL("./src/audio", import.meta.url)),
+      "@stream": fileURLToPath(new URL("./src/stream", import.meta.url)),
       "@stage": fileURLToPath(new URL("./src/stage", import.meta.url)),
       "@ui": fileURLToPath(new URL("./src/ui", import.meta.url)),
     },

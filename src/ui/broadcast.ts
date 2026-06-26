@@ -1,7 +1,7 @@
 // The broadcast overlay: a keynote stage with live-TV production graphics. Built
-// once, then updated each tick from the clock state (no per-frame DOM churn).
+// once, then updated each tick from the stream frame (no per-frame DOM churn).
 
-import type { ClockState } from "../sync/clock.ts";
+import type { StreamFrame } from "../stream/player.ts";
 import { formatCount } from "../sync/viewers.ts";
 import { imagesFor } from "../stage/slides.ts";
 
@@ -26,7 +26,7 @@ function timecode(nowMs: number): string {
 }
 
 export interface BroadcastView {
-  update(state: ClockState, viewers: number, nowMs: number): void;
+  update(frame: StreamFrame, viewers: number, nowMs: number): void;
   root: HTMLElement;
 }
 
@@ -84,24 +84,25 @@ export function createBroadcast(parent: HTMLElement): BroadcastView {
 
   let lastSceneIndex = -1;
   let lastPhase = "";
+  let lastApplause: boolean | null = null;
+  let lastCaption = "";
   let images: string[] = [];
   let slideSlot = -1;
 
-  function update(state: ClockState, viewerCountNow: number, nowMs: number): void {
-    const { scene } = state;
+  function update(frame: StreamFrame, viewerCountNow: number, nowMs: number): void {
+    const { manifest } = frame;
     viewers.textContent = `${formatCount(viewerCountNow)} watching`;
     tc.textContent = timecode(nowMs);
 
-    if (state.sceneIndex !== lastSceneIndex) {
-      lastSceneIndex = state.sceneIndex;
-      slideCompany.textContent = scene.company.toUpperCase();
-      slideProduct.textContent = scene.product;
-      slideTagline.textContent = scene.tagline;
-      slideBadge.textContent = scene.company.toUpperCase();
-      ltName.textContent = scene.speaker.name;
-      ltTitle.textContent = `${scene.speaker.title}, ${scene.company}`;
-      root.dataset.topic = scene.topic;
-      images = imagesFor(scene.topic);
+    if (frame.sceneIndex !== lastSceneIndex) {
+      lastSceneIndex = frame.sceneIndex;
+      slideCompany.textContent = manifest.company.toUpperCase();
+      slideProduct.textContent = manifest.product;
+      slideTagline.textContent = manifest.tagline;
+      slideBadge.textContent = manifest.company.toUpperCase();
+      ltName.textContent = manifest.speaker.name;
+      ltTitle.textContent = `${manifest.speaker.title}, ${manifest.company}`;
+      images = imagesFor(manifest.topic);
       slideSlot = -1;
     }
 
@@ -118,17 +119,24 @@ export function createBroadcast(parent: HTMLElement): BroadcastView {
       }
     }
 
-    if (state.phase !== lastPhase) {
-      lastPhase = state.phase;
-      root.dataset.phase = state.phase;
-      root.classList.toggle("is-applause", state.applause);
+    if (frame.phase !== lastPhase) {
+      lastPhase = frame.phase;
+      root.dataset.phase = frame.phase;
+    }
+    if (frame.applause !== lastApplause) {
+      lastApplause = frame.applause;
+      root.classList.toggle("is-applause", frame.applause);
     }
 
-    if (state.line) {
-      caption.classList.remove("hidden");
-      captionText.textContent = state.line.text;
-    } else {
-      caption.classList.add("hidden");
+    const text = frame.line?.text ?? "";
+    if (text !== lastCaption) {
+      lastCaption = text;
+      if (text) {
+        caption.classList.remove("hidden");
+        captionText.textContent = text;
+      } else {
+        caption.classList.add("hidden");
+      }
     }
   }
 

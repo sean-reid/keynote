@@ -25,11 +25,11 @@
     "paths": {
       "@grammar/*": ["src/grammar/*"],
       "@sync/*": ["src/sync/*"],
-      "@voice/*": ["src/voice/*"],
-      "@avatar/*": ["src/avatar/*"],
+      "@audio/*": ["src/audio/*"],
+      "@stream/*": ["src/stream/*"],
       "@stage/*": ["src/stage/*"],
       "@ui/*": ["src/ui/*"]
     }
   },
-  "include": ["src", "worker", "tests", "vite.config.ts", "playwright.config.ts"]
+  "include": ["src", "tests", "vite.config.ts", "playwright.config.ts"]
 }
