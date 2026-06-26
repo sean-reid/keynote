@@ -413,6 +413,8 @@ body {
   .lower-third { bottom: 150px; }
   .caption { bottom: 48px; width: 92vw; }
   .caption-text { font-size: 1.02rem; }
+  /* Lift the sound toggle above the caption so it never covers the subtitles. */
+  .sound { bottom: 112px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
