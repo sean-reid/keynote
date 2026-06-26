@@ -142,7 +142,7 @@ export class StreamPlayer {
   level(): number {
     const analyser = this.analyser;
     const data = this.levelData;
-    if (!analyser || !data) return 0;
+    if (!analyser || !data) return -1; // no audio graph yet (muted): use procedural
     analyser.getByteTimeDomainData(data);
     let sum = 0;
     for (let i = 0; i < data.length; i++) {
@@ -150,7 +150,9 @@ export class StreamPlayer {
       sum += v * v;
     }
     const rms = Math.sqrt(sum / data.length);
-    this.smoothedLevel += (rms - this.smoothedLevel) * 0.6;
+    // Instant attack, eased release: track the voice tightly without flicker or
+    // lag (smoothing the rise is what made the mouth trail the audio).
+    this.smoothedLevel = rms > this.smoothedLevel ? rms : this.smoothedLevel + (rms - this.smoothedLevel) * 0.5;
     return this.smoothedLevel;
   }
 

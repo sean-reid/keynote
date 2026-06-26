@@ -68,7 +68,7 @@ export class Presenter {
   private stageTargetX = 0;
   private stageVel = 0;
 
-  constructor(level: () => number = () => 0) {
+  constructor(level: () => number = () => -1) {
     this.level = level;
     const canvas = document.createElement("canvas");
     canvas.className = "presenter-canvas";
@@ -152,15 +152,16 @@ export class Presenter {
     this.stageX += (this.stageTargetX - this.stageX) * Math.min(1, dt * 2.2);
     this.stageVel = dt > 0 ? (this.stageX - prevStage) / dt : 0;
 
-    // Mouth: snappy attack so it tracks the audio with little lag, opening wide
-    // for clear movement. Uses real amplitude when sound is on, plus a procedural
-    // speech rhythm so it still moves promptly when muted or before audio ramps.
+    // Mouth: when sound is on, track the real amplitude with a near-instant
+    // attack so it stays locked to the voice; when muted (level < 0) fall back to
+    // a procedural speech rhythm. The procedural envelope is NOT mixed in while
+    // audio plays, since its independent timing reads as lip-sync drift.
     let target = 0;
     if (this.state.speaking) {
-      const amp = clamp01(this.level() * 2.6);
-      target = Math.max(amp, talkEnvelope(this.t));
+      const lvl = this.level();
+      target = lvl < 0 ? talkEnvelope(this.t) : clamp01(lvl * 2.8);
     }
-    const rate = target > this.mouth ? 38 : 20;
+    const rate = target > this.mouth ? 60 : 24;
     this.mouth += (target - this.mouth) * Math.min(1, dt * rate);
 
     // Blink.
