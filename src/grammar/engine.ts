@@ -222,6 +222,8 @@ const FLOW_WORDS = new Set([
 function finalizeSentence(input: string): string {
   let text = input.replace(/\s+/g, " ").trim();
   text = text.replace(/\s+([,.;:!?])/g, "$1");
+  // Collapse a stacked article pair ("a the tip" -> "the tip", "the the" -> "the").
+  text = text.replace(/\b(?:a|an|the)\s+(a|an|the)\b/gi, "$1");
   text = correctArticles(text);
   text = collapseDuplicateWords(text);
   text = capitalize(text);

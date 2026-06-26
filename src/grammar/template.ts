@@ -19,12 +19,21 @@ const MAX_DEPTH = 4;
 // Metrics that read as a standalone quantity ("10x", "40%", "order of magnitude"),
 // as opposed to lead-in phrases ("north of", "below the line") that need a number.
 const QUANTITY = /\d|%|\bx\b|x$|×|fold|order of magnitude|double|triple|quadruple|halv|\bhalf\b|zero|nine|9s|basis point|sub-?second|million|billion|thousand/i;
+// Prefix-style fragments ("north of", "90% reduction in", "millions of") read as
+// truncated when used standalone, so they are not selectable as a figure.
+const PREFIX_FRAGMENT = /\b(in|by|of|than|to|across|for|on|over|under|upwards|north)$/i;
+
+function usableMetrics(list: string[]): string[] {
+  return list.filter((m) => !PREFIX_FRAGMENT.test(m.trim()));
+}
 
 function quantityMetric(ctx: ExpandContext): string {
-  const q = ctx.topic.metrics.filter((m) => QUANTITY.test(m));
+  const usable = usableMetrics(ctx.topic.metrics);
+  const q = usable.filter((m) => QUANTITY.test(m));
   if (q.length > 0) return ctx.rng.pick(q);
-  if (ctx.topic.metrics.length > 0) return ctx.rng.pick(ctx.topic.metrics);
-  return ctx.rng.pick(ctx.rhetoric.metrics);
+  if (usable.length > 0) return ctx.rng.pick(usable);
+  const shared = usableMetrics(ctx.rhetoric.metrics);
+  return shared.length > 0 ? ctx.rng.pick(shared) : ctx.rng.pick(ctx.rhetoric.metrics);
 }
 
 /** Pull from the topic list most of the time, the shared pool occasionally. */

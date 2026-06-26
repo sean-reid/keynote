@@ -134,10 +134,12 @@ export function collapseDuplicateWords(text: string): string {
   return text.replace(/\b([\w-]+)(\s+\1)+\b/gi, "$1");
 }
 
-/** Capitalize the first visible letter, leaving the rest untouched. */
+/** Capitalize the first letter, after any leading quotes/brackets. If the line
+ * starts with a number or symbol (e.g. "20% growth"), it is left as-is. */
 export function capitalize(text: string): string {
-  const i = text.search(/[a-z]/i);
-  if (i < 0) return text;
+  const m = /^(["'([{]*)([A-Za-z])/.exec(text);
+  if (!m) return text;
+  const i = m[1]?.length ?? 0;
   return text.slice(0, i) + text.charAt(i).toUpperCase() + text.slice(i + 1);
 }
 
