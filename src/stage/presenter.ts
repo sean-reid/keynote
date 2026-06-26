@@ -208,10 +208,9 @@ export class Presenter {
     const tilt = Math.sin(this.t * 0.5 + 1) * 0.018 + lean * 0.5;
     const cx = px + sway;
 
-    // Fade out as the speaker walks off the edge of the frame.
-    const alpha = Math.max(0, Math.min(1, (1.3 - Math.abs(this.stageX)) / 0.4));
-    if (alpha <= 0.01) return;
-    ctx.globalAlpha = alpha;
+    // Once fully off-stage there is nothing to draw; the screen edge clips the
+    // walk-on/off naturally, like a speaker stepping out of frame.
+    if (Math.abs(this.stageX) > 1.5) return;
 
     // Backlight halo so the silhouette separates from the dark stage.
     const halo = ctx.createRadialGradient(cx, headCy + headH * 0.4, headH * 0.3, cx, headCy + headH * 0.4, headH * 4.5);
@@ -238,7 +237,6 @@ export class Presenter {
     ctx.restore();
 
     ctx.restore();
-    ctx.globalAlpha = 1;
   }
 
   private ellipse(cx: number, cy: number, rx: number, ry: number): void {

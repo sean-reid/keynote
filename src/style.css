@@ -182,11 +182,11 @@ body {
 }
 
 .presenter-canvas {
+  /* Full frame width so the speaker can walk on/off at the real screen edges. */
   position: absolute;
-  left: 50%;
+  left: 0;
   bottom: 2%;
-  transform: translateX(-50%);
-  width: min(56vw, 700px);
+  width: 100%;
   height: clamp(280px, 56vh, 500px);
   pointer-events: none;
   filter: drop-shadow(0 22px 34px rgba(0, 0, 0, 0.55));
@@ -409,7 +409,7 @@ body {
   /* Lower the slide and bring the presenter up under it so the tall, narrow
      frame reads as one composition instead of two pieces with a gap. */
   .screen { width: 92vw; top: 14%; }
-  .presenter-canvas { width: 98vw; height: clamp(260px, 54vh, 460px); bottom: 9%; }
+  .presenter-canvas { height: clamp(260px, 54vh, 460px); bottom: 9%; }
   .lower-third { bottom: 150px; }
   .caption { bottom: 48px; width: 92vw; }
   .caption-text { font-size: 1.02rem; }
