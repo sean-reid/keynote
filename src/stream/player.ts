@@ -10,7 +10,13 @@ import { locateScene } from "../sync/clock.ts";
 import type { AudioSegment, BroadcastIndex, SceneManifest } from "../audio/manifest.ts";
 
 const AUDIO_BASE = "/audio";
-const DRIFT_TOLERANCE_MS = 900; // re-seek if audio strays this far from the clock
+// Re-seek only on a large desync (late join, throttled tab). A tight tolerance
+// made the player chase the clock while a fresh scene was still buffering, which
+// skipped the announcer's first words until it stabilized.
+const DRIFT_TOLERANCE_MS = 2_500;
+// Grace period after loading a scene before any drift correction, so the opening
+// announcer plays from the start instead of being seeked through while buffering.
+const SETTLE_MS = 3_000;
 const PREFETCH_LEAD_MS = 20_000; // warm the next scene this long before it starts
 const CATALOG_TTL_MS = 30_000; // how often to re-check the available window
 const KEEP_BEHIND = 2; // manifests to retain on each side of the live scene
@@ -95,6 +101,7 @@ export class StreamPlayer {
   private catalogInflight = false;
 
   private loaded = -1; // scene index whose mp3 is currently in audio.src
+  private loadedAt = 0; // wall-clock time the current scene was attached
   private pendingSeekMs: number | null = null;
   private muted = true;
   private onContent: (() => void) | null = null;
@@ -195,8 +202,8 @@ export class StreamPlayer {
     if (!manifest) return null;
 
     const desired = clamp(now - located.startMs, 0, Math.max(0, manifest.durationMs - 1));
-    this.attach(sceneIndex, desired);
-    this.correctDrift(desired);
+    this.attach(sceneIndex, desired, now);
+    this.correctDrift(desired, now);
     this.prune(sceneIndex);
 
     const positionMs = this.positionMs(desired);
@@ -242,9 +249,10 @@ export class StreamPlayer {
   }
 
   /** Keep the live scene's audio in `audio.src`, seeking to the right offset. */
-  private attach(index: number, desiredMs: number): void {
+  private attach(index: number, desiredMs: number, now: number): void {
     if (this.loaded !== index) {
       this.loaded = index;
+      this.loadedAt = now;
       this.pendingSeekMs = desiredMs;
       this.audio.src = `${AUDIO_BASE}/${index}.mp3`;
       this.audio.load();
@@ -262,8 +270,12 @@ export class StreamPlayer {
     this.pendingSeekMs = null;
   }
 
-  private correctDrift(desiredMs: number): void {
-    if (this.pendingSeekMs !== null || this.audio.paused || this.audio.readyState < 2) return;
+  private correctDrift(desiredMs: number, now: number): void {
+    if (this.pendingSeekMs !== null || this.audio.paused) return;
+    // Let a freshly loaded scene settle, and only seek when there is buffered
+    // data ahead (readyState >= HAVE_FUTURE_DATA), so we never seek through the
+    // opening announcer while it is still buffering.
+    if (now - this.loadedAt < SETTLE_MS || this.audio.readyState < 3) return;
     if (Math.abs(this.audio.currentTime * 1000 - desiredMs) > DRIFT_TOLERANCE_MS) {
       try {
         this.audio.currentTime = desiredMs / 1000;
