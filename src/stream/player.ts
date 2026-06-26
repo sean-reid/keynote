@@ -150,7 +150,7 @@ export class StreamPlayer {
       sum += v * v;
     }
     const rms = Math.sqrt(sum / data.length);
-    this.smoothedLevel += (rms - this.smoothedLevel) * 0.4;
+    this.smoothedLevel += (rms - this.smoothedLevel) * 0.6;
     return this.smoothedLevel;
   }
 

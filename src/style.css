@@ -406,9 +406,10 @@ body {
 }
 
 @media (max-width: 640px) {
-  .screen { width: 92vw; top: 6%; }
-  /* Keep the presenter from crowding out the slide on tall, narrow screens. */
-  .presenter-canvas { width: 96vw; height: clamp(180px, 32vh, 320px); bottom: 12%; }
+  /* Lower the slide and bring the presenter up under it so the tall, narrow
+     frame reads as one composition instead of two pieces with a gap. */
+  .screen { width: 92vw; top: 14%; }
+  .presenter-canvas { width: 98vw; height: clamp(260px, 54vh, 460px); bottom: 9%; }
   .lower-third { bottom: 150px; }
   .caption { bottom: 48px; width: 92vw; }
   .caption-text { font-size: 1.02rem; }

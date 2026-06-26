@@ -64,6 +64,9 @@ export class Presenter {
   private blinkWait = 2;
   private paceNorm = 0;
   private paceVel = 0;
+  private stageX = 0;
+  private stageTargetX = 0;
+  private stageVel = 0;
 
   constructor(level: () => number = () => 0) {
     this.level = level;
@@ -89,6 +92,17 @@ export class Presenter {
 
   setState(state: PresenterState): void {
     this.state = state;
+  }
+
+  /** Target stage position: -1.4 = off the left, 0 = centre, 1.4 = off the right. */
+  setStage(x: number): void {
+    this.stageTargetX = x;
+  }
+
+  /** Snap a freshly introduced speaker to just off the left, ready to walk on. */
+  enterFromLeft(): void {
+    this.stageX = -1.4;
+    this.stageTargetX = -1.4;
   }
 
   start(): void {
@@ -133,13 +147,20 @@ export class Presenter {
     this.paceNorm = Math.sin(this.t * 0.11) * 0.62 + Math.sin(this.t * 0.047 + 2) * 0.38;
     this.paceVel = dt > 0 ? (this.paceNorm - prevPace) / dt : 0;
 
-    // Mouth: fast attack toward the speech target, slightly slower release.
+    // Walk on/off the stage by easing toward the target position.
+    const prevStage = this.stageX;
+    this.stageX += (this.stageTargetX - this.stageX) * Math.min(1, dt * 2.2);
+    this.stageVel = dt > 0 ? (this.stageX - prevStage) / dt : 0;
+
+    // Mouth: snappy attack so it tracks the audio with little lag, opening wide
+    // for clear movement. Uses real amplitude when sound is on, plus a procedural
+    // speech rhythm so it still moves promptly when muted or before audio ramps.
     let target = 0;
     if (this.state.speaking) {
-      const amp = clamp01(this.level() * 1.6);
-      target = Math.max(amp, talkEnvelope(this.t) * 0.85);
+      const amp = clamp01(this.level() * 2.6);
+      target = Math.max(amp, talkEnvelope(this.t));
     }
-    const rate = target > this.mouth ? 22 : 12;
+    const rate = target > this.mouth ? 38 : 20;
     this.mouth += (target - this.mouth) * Math.min(1, dt * rate);
 
     // Blink.
@@ -175,14 +196,22 @@ export class Presenter {
     const shoulderY = headCy + headH * 1.05;
     const groundY = h * 1.35;
 
-    // Stay lively without leaving frame: a contained weight-shift, plus lean/bob.
-    const px = w / 2 + this.paceNorm * (w * 0.05);
-    const lean = Math.max(-0.05, Math.min(0.05, this.paceVel * 0.7));
-    const moving = Math.min(1, Math.abs(this.paceVel) / 0.12);
-    const bob = Math.sin(this.t * 5) * moving * (h * 0.005);
-    const sway = Math.sin(this.t * 0.6) * (w * 0.002) * (1 - moving);
-    const tilt = Math.sin(this.t * 0.5 + 1) * 0.018 + lean * 0.6;
+    // Compose a contained idle weight-shift (suppressed while walking) with the
+    // walk-on / walk-off across the stage.
+    const idle = Math.max(0, 1 - Math.min(1, Math.abs(this.stageX) * 2.5));
+    const px = w / 2 + this.paceNorm * (w * 0.035) * idle + this.stageX * (w * 0.7);
+    const vx = this.stageVel * (w * 0.7) + this.paceVel * (w * 0.035) * idle;
+    const moving = Math.min(1, Math.abs(vx) / (w * 0.18));
+    const lean = Math.max(-0.08, Math.min(0.08, (vx / w) * 0.6));
+    const bob = Math.sin(this.t * 7) * moving * (h * 0.008);
+    const sway = Math.sin(this.t * 0.6) * (w * 0.0018) * idle * (1 - moving);
+    const tilt = Math.sin(this.t * 0.5 + 1) * 0.018 + lean * 0.5;
     const cx = px + sway;
+
+    // Fade out as the speaker walks off the edge of the frame.
+    const alpha = Math.max(0, Math.min(1, (1.3 - Math.abs(this.stageX)) / 0.4));
+    if (alpha <= 0.01) return;
+    ctx.globalAlpha = alpha;
 
     // Backlight halo so the silhouette separates from the dark stage.
     const halo = ctx.createRadialGradient(cx, headCy + headH * 0.4, headH * 0.3, cx, headCy + headH * 0.4, headH * 4.5);
@@ -209,6 +238,7 @@ export class Presenter {
     ctx.restore();
 
     ctx.restore();
+    ctx.globalAlpha = 1;
   }
 
   private ellipse(cx: number, cy: number, rx: number, ry: number): void {
@@ -451,7 +481,7 @@ export class Presenter {
     // Mouth: upper lip, an animated dark opening with a teeth hint, lower lip.
     const mouthY = cy + hh * 0.46;
     const mouthW = hw * 0.4;
-    const openMs = this.mouth * hh * 0.17;
+    const openMs = this.mouth * hh * 0.3;
     const smile = this.state.applause ? hh * 0.04 : 0;
     if (look.facialHair !== "none") this.mustache(cx, cy, hw, hh, mouthY, look);
 

@@ -90,6 +90,8 @@ export function createBroadcast(parent: HTMLElement, level: () => number = () =>
   let lastCaption = "";
   let images: string[] = [];
   let slideSlot = -1;
+  let introEnd = 0; // ms; the speaker walks on across this window
+  let exitStart = 0; // ms; the speaker walks off after the last speech
 
   function update(frame: StreamFrame, viewerCountNow: number, nowMs: number): void {
     const { manifest } = frame;
@@ -106,7 +108,15 @@ export function createBroadcast(parent: HTMLElement, level: () => number = () =>
       ltTitle.textContent = `${manifest.speaker.title}, ${manifest.company}`;
       images = imagesFor(manifest.topic);
       slideSlot = -1;
+      introEnd = 0;
+      exitStart = 0;
+      for (const seg of manifest.segments) {
+        if (seg.kind === "intro") introEnd = Math.max(introEnd, seg.startMs + seg.durationMs);
+        if (seg.kind === "speech") exitStart = Math.max(exitStart, seg.startMs + seg.durationMs);
+      }
       presenter.setSpeaker(manifest.speaker.persona ?? manifest.speaker.name, manifest.speaker.gender);
+      // At a live scene change we are at the new speaker's intro, so walk them on.
+      if (frame.phase === "intro") presenter.enterFromLeft();
     }
 
     // Rotate the screen between the title card (slot 0) and each photo. The slot
@@ -142,6 +152,16 @@ export function createBroadcast(parent: HTMLElement, level: () => number = () =>
       }
     }
 
+    // Walk the speaker on during the intro and off during the closing ovation.
+    const pos = frame.positionMs;
+    let stageX = 0;
+    if (introEnd > 0 && pos < introEnd) {
+      stageX = -1.4 * (1 - pos / introEnd);
+    } else if (exitStart > 0 && pos >= exitStart) {
+      const span = Math.max(1, manifest.durationMs - exitStart);
+      stageX = 1.4 * Math.min(1, (pos - exitStart) / span);
+    }
+    presenter.setStage(stageX);
     presenter.setState({ speaking: frame.phase === "speaking", applause: frame.applause });
   }
 
