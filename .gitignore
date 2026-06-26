@@ -1,0 +1,23 @@
+node_modules/
+dist/
+.cache/
+.wrangler/
+.dev.vars
+
+# Test + tooling output
+coverage/
+playwright-report/
+test-results/
+*.local
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# Local agent + assistant config (never published)
+.claude/
+CLAUDE.md
+.cursor/
+.aider*
