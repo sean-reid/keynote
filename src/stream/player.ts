@@ -17,7 +17,7 @@ const DRIFT_TOLERANCE_MS = 2_500;
 // Grace period after loading a scene before any drift correction, so the opening
 // announcer plays from the start instead of being seeked through while buffering.
 const SETTLE_MS = 3_000;
-const PREFETCH_LEAD_MS = 20_000; // warm the next scene this long before it starts
+const PREFETCH_LEAD_MS = 45_000; // warm the next scene this long before it starts
 const CATALOG_TTL_MS = 30_000; // how often to re-check the available window
 const KEEP_BEHIND = 2; // manifests to retain on each side of the live scene
 const KEEP_AHEAD = 4;
@@ -302,7 +302,11 @@ export class StreamPlayer {
     this.request(next);
     if (!this.warmed.has(next)) {
       this.warmed.add(next);
-      void fetch(`${AUDIO_BASE}/${next}.mp3`, { cache: "force-cache" }).catch(() => undefined);
+      // Read the body so the whole mp3 is downloaded into the HTTP cache, not
+      // just the headers; otherwise the scene switch still has to buffer.
+      void fetch(`${AUDIO_BASE}/${next}.mp3`, { cache: "force-cache" })
+        .then((r) => (r.ok ? r.blob() : null))
+        .catch(() => undefined);
     }
   }
 
