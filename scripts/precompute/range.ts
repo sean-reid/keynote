@@ -15,7 +15,7 @@ const base = sceneIndexAtTime(Date.now());
 if (!process.argv.includes("--plan")) {
   process.stdout.write(String(base));
 } else {
-  const buffer = Number(arg("count", "288")); // scenes to keep ready ahead of live
+  const buffer = Number(arg("count", "96")); // scenes to keep ready ahead of live (~16h)
   const shards = Number(arg("shards", "12"));
   const catalogUrl =
     process.env.KEYNOTE_CATALOG_URL ?? "https://keynote.dwainosaur.com/audio/index.json";

@@ -9,7 +9,7 @@ on:
     inputs:
       count:
         description: "Scenes to keep ready ahead of live"
-        default: "288"
+        default: "96"
 
 concurrency:
   group: precompute-audio
@@ -27,7 +27,7 @@ jobs:
           node-version: 24
       - id: plan
         run: |
-          COUNT="${{ github.event.inputs.count || '288' }}"
+          COUNT="${{ github.event.inputs.count || '96' }}"
           MATRIX=$(node scripts/precompute/range.ts --plan --count "$COUNT" --shards 12)
           echo "matrix={\"include\":$MATRIX}" >> "$GITHUB_OUTPUT"
 
