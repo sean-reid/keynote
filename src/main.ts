@@ -58,7 +58,9 @@ let playhead = 0;
 let speaking = false;
 let spokenText = "";
 let speakStart = 0;
+let nextAllowedAt = 0;
 const MAX_SPEAK_MS = 25_000;
+const PHRASE_GAP_MS = 550; // a small beat between phrases so they don't run together
 
 function tick(): void {
   const now = syncedNow();
@@ -91,7 +93,14 @@ function tick(): void {
     speaking = false;
   }
 
-  if (voice.enabled && !muted && line && !speaking && line.text !== spokenText) {
+  if (
+    voice.enabled &&
+    !muted &&
+    line &&
+    !speaking &&
+    line.text !== spokenText &&
+    Date.now() >= nextAllowedAt
+  ) {
     spokenText = line.text;
     speaking = true;
     speakStart = Date.now();
@@ -101,6 +110,7 @@ function tick(): void {
       { kind: line.role, persona: cs.scene.speaker.persona, gender: cs.scene.speaker.gender },
       () => {
         speaking = false;
+        nextAllowedAt = Date.now() + PHRASE_GAP_MS;
         if (speakingPhase) playhead = Math.min(cs.scene.utterances.length - 1, playhead + 1);
       },
     );
