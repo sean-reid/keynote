@@ -1,46 +1,54 @@
-# The Infinite Speech
+# The Infinite Keynote
 
-A keynote address that never ends.
+A tech keynote that never ends. A fictional executive walks a dark stage and
+delivers a product launch that is generated forever and streamed around the
+clock. Listen for a minute and it sounds like any keynote you have sat through.
+Listen for an hour and it quietly comes apart at the seams.
 
-A fictional executive walks a dark stage and delivers a tech keynote that is
-generated on the fly and streams forever. Listen for a minute and it sounds like
-any product launch you have ever sat through. Listen for an hour and it quietly
-comes apart at the seams.
-
-Everything is generated in the browser. There is no video file and no recording.
-The speech is assembled from a large lexicon of real industry jargon, stitched
-together by a grammar that follows the rhythm of a real keynote, spoken aloud,
-and lip-synced onto a 3D presenter in real time.
+Live at [keynote.dwainosaur.com](https://keynote.dwainosaur.com).
 
 ## How it works
 
-- **Grammar** turns a categorized lexicon into endless, locally coherent speech
-  that drifts over time. Seeded from the wall clock, so every viewer is watching
-  the same broadcast at the same moment.
-- **Voice** is synthesized in the browser, with the mouth shapes driven by the
-  speech timing.
-- **Stage** is a real-time 3D scene: a presenter, spotlights, and a screen of
-  slides that are generated alongside the words.
+A deterministic grammar turns a categorized lexicon of industry jargon into
+endless, locally coherent speech, keyed to the wall clock so every viewer is on
+the same moment. The audio is precomputed, not made in the browser:
+
+- **Pipeline** (GitHub Actions): native Piper synthesizes each upcoming scene
+  into one mp3 plus a timing manifest and uploads them to R2. It runs on a
+  schedule, topping up a buffer ahead of live and evicting old scenes.
+- **Worker** (Cloudflare): serves the site, a shared `/time` endpoint, and the
+  precomputed audio from R2.
+- **Client**: maps the clock to the live scene, streams its mp3 and manifest,
+  drives the captions, and animates a rim-lit presenter on a 2D canvas whose
+  mouth lip-syncs to the audio.
+
+Everything is reproducible from a seed and a timestamp, so there is no server
+state and no recording.
 
 ## Development
 
 ```bash
 npm install
-npm run dev        # local dev server
-npm run test       # unit tests
-npm run test:e2e   # end to end tests
-npm run build      # production build
+npm run dev          # local dev server
+npm run test         # unit tests
+npm run test:e2e     # end-to-end tests
+npm run build        # production build
+npm run deploy       # build and deploy the Worker
+
+# generate audio locally (needs ffmpeg + Piper; KEYNOTE_TTS_STUB=1 for silence)
+node scripts/precompute/index.ts --from 0 --to 2 --out audio-out
 ```
 
 ## Layout
 
 ```
-data/lexicon/   categorized jargon corpus (one file per theme)
-src/grammar/    speech generation
-src/sync/       broadcast clock
-src/voice/      speech synthesis and timing
-src/avatar/     presenter and lip sync
-src/stage/      3D scene and slides
-src/ui/         broadcast overlay
-worker/         Cloudflare Worker (static assets + time endpoint)
+data/                lexicon, presenters, applause, slide images
+scripts/precompute/  offline audio pipeline (Piper -> mp3 + manifest)
+src/grammar/         speech generation
+src/sync/            broadcast clock and viewer count
+src/audio/           scene manifest contract
+src/stream/          audio stream player
+src/stage/           presenter, look, slides
+src/ui/              broadcast overlay
+worker/              Cloudflare Worker (assets + /time + R2 audio)
 ```
