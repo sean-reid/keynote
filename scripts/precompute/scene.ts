@@ -110,14 +110,10 @@ export function buildScene(
     pendingApplause = u.applause;
   }
 
-  // Closing ovation: keep the crowd going until the scene fills its unit, so
-  // there is no dead air before the next speaker. The broadcast clock trims any
-  // overrun at the unit boundary.
-  let guard = 0;
-  while (cursor < unitMs && LONG_APPLAUSE.length > 0 && guard < 16) {
-    applause(LONG_APPLAUSE);
-    guard++;
-  }
+  // A single closing ovation clip (no looping, which sounds like a short clip on
+  // repeat). A brief settle before the next speaker is fine; the broadcast clock
+  // holds the last frame to the unit boundary.
+  applause(LONG_APPLAUSE);
 
   const outMp3 = join(outDir, `${sceneIndex}.mp3`);
   concatToMp3(parts, outMp3);

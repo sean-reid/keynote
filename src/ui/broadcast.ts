@@ -8,6 +8,9 @@ import { Presenter } from "../stage/presenter.ts";
 
 // How long each slide (the title card, then each photo) stays up.
 const SLIDE_MS = 13_000;
+// How quickly the speaker walks off after the keynote (independent of how long
+// the applause runs), so they don't dawdle on stage.
+const EXIT_WALK_MS = 2_200;
 
 function h<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -31,7 +34,7 @@ export interface BroadcastView {
   root: HTMLElement;
 }
 
-export function createBroadcast(parent: HTMLElement, level: () => number = () => 0): BroadcastView {
+export function createBroadcast(parent: HTMLElement, level: () => number = () => -1): BroadcastView {
   const root = h("div", "broadcast");
 
   // Stage
@@ -158,8 +161,7 @@ export function createBroadcast(parent: HTMLElement, level: () => number = () =>
     if (introEnd > 0 && pos < introEnd) {
       stageX = -1.4 * (1 - pos / introEnd);
     } else if (exitStart > 0 && pos >= exitStart) {
-      const span = Math.max(1, manifest.durationMs - exitStart);
-      stageX = 1.4 * Math.min(1, (pos - exitStart) / span);
+      stageX = 1.4 * Math.min(1, (pos - exitStart) / EXIT_WALK_MS);
     }
     presenter.setStage(stageX);
     presenter.setState({ speaking: frame.phase === "speaking", applause: frame.applause });
