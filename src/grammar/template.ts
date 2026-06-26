@@ -2,7 +2,7 @@
 // from the active topic (and occasionally the shared rhetoric pool, for variety).
 
 import type { LexCategory, RhetoricCategory } from "./types.ts";
-import { gerund, pluralize } from "./inflect.ts";
+import { gerund, pluralize, thirdPerson } from "./inflect.ts";
 import type { Rng } from "./rng.ts";
 
 export interface ExpandContext {
@@ -45,6 +45,8 @@ function resolveSlot(name: string, ctx: ExpandContext): string {
       return blend(ctx, topic.adjectives, rhetoric.adjectives);
     case "verb":
       return blend(ctx, topic.verbs, rhetoric.verbs);
+    case "verbs":
+      return thirdPerson(blend(ctx, topic.verbs, rhetoric.verbs));
     case "verbing":
       return gerund(blend(ctx, topic.verbs, rhetoric.verbs));
     case "buzzphrase":

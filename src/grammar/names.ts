@@ -58,3 +58,17 @@ export function coinSpeaker(rng: Rng, presenters: Presenters): Speaker {
   const persona = rng.int(1_000_000);
   return { name, title, persona };
 }
+
+/** Fill an announcer introduction template for a given speaker and company. */
+export function coinIntroduction(
+  rng: Rng,
+  speaker: Speaker,
+  company: string,
+  templates: string[],
+): string {
+  return rng
+    .pick(templates)
+    .replace(/#name#/g, speaker.name)
+    .replace(/#title#/g, speaker.title)
+    .replace(/#company#/g, company);
+}

@@ -6,8 +6,9 @@ import type { Beat, LexCategory, RhetoricCategory } from "./types.ts";
 /** Beats every scene opens with, in order. The product is named at "reveal". */
 export const INTRO_BEATS: readonly Beat[] = ["opener", "anecdote", "problem", "whatIf", "reveal"];
 
-/** Body beats the engine cycles through until the scene is full. */
-export const BODY_BEATS: readonly Beat[] = ["feature", "metric", "feature", "vision"];
+/** Body beats the engine cycles through until the scene is full. Weighted toward
+ * features and vision so a long scene does not lean on the metric wrappers. */
+export const BODY_BEATS: readonly Beat[] = ["feature", "vision", "feature", "metric", "feature", "vision"];
 
 /** Beats every scene closes with, in order. */
 export const OUTRO_BEATS: readonly Beat[] = ["callToAction", "gratitude"];

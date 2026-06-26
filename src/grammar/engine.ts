@@ -3,12 +3,21 @@
 // speech for any moment without replaying everything that came before.
 
 import { BODY_BEATS, INTRO_BEATS, OUTRO_BEATS, beatNamesProduct, beatPool } from "./beats.ts";
-import { COMMA_PAUSE_MS, MS_PER_WORD, SCENE_MS, SENTENCE_PAUSE_MS } from "./config.ts";
+import { COMMA_PAUSE_MS, MS_PER_WORD, SENTENCE_PAUSE_MS, SPEAKING_MS } from "./config.ts";
 import { capitalize, collapseDuplicateWords, correctArticles, lowerFirst } from "./inflect.ts";
-import { coinCompany, coinProduct, coinSpeaker, coinTagline } from "./names.ts";
+import { coinCompany, coinIntroduction, coinProduct, coinSpeaker, coinTagline } from "./names.ts";
 import { Rng } from "./rng.ts";
 import { expand, type ExpandContext } from "./template.ts";
-import type { Beat, Branding, Corpus, LexCategory, Presenters, Scene, Utterance } from "./types.ts";
+import type {
+  Announcer,
+  Beat,
+  Branding,
+  Corpus,
+  LexCategory,
+  Presenters,
+  Scene,
+  Utterance,
+} from "./types.ts";
 
 const OUTRO_RESERVE_MS = 9_000;
 const TEASER = "what comes next";
@@ -18,6 +27,7 @@ export class SpeechEngine {
   private readonly rhetoric: Corpus["rhetoric"];
   private readonly presenters: Presenters;
   private readonly branding: Branding;
+  private readonly announcer: Announcer;
   private readonly weights: number[];
   private readonly seed: string;
   private readonly quantified: RegExp;
@@ -29,6 +39,7 @@ export class SpeechEngine {
     this.rhetoric = corpus.rhetoric;
     this.presenters = corpus.presenters;
     this.branding = corpus.branding;
+    this.announcer = corpus.announcer;
     this.weights = this.domains.map((d) => (d.weight > 0 ? d.weight : 1));
     // Singularize a plural audience noun after a singular quantifier
     // ("every builders" -> "every builder").
@@ -47,7 +58,7 @@ export class SpeechEngine {
   }
 
   /** Build the full scene at the given index. */
-  generateScene(sceneIndex: number, targetMs: number = SCENE_MS): Scene {
+  generateScene(sceneIndex: number, targetMs: number = SPEAKING_MS): Scene {
     const topic = this.domains[this.topicIndex(sceneIndex)] as LexCategory;
     const rng = new Rng(`${this.seed}|scene|${sceneIndex}`);
 
@@ -56,13 +67,22 @@ export class SpeechEngine {
     const tagline = coinTagline(rng, topic);
     const speaker = coinSpeaker(rng, this.presenters);
 
+    const introText = coinIntroduction(rng, speaker, company, this.announcer.introductions);
+    const introWords = introText.split(/\s+/).filter(Boolean);
+    const intro = {
+      text: introText,
+      words: introWords,
+      nominalMs: introWords.length * MS_PER_WORD + SENTENCE_PAUSE_MS,
+    };
+
     const ctx: ExpandContext = { rng, topic, rhetoric: this.rhetoric, product, company };
     const utterances: Utterance[] = [];
     const seen = new Set<string>();
+    const usedLeadIns = new Set<string>();
     let totalMs = 0;
 
     const emit = (beat: Beat): void => {
-      const u = this.makeUtterance(beat, ctx, topic, seen);
+      const u = this.makeUtterance(beat, ctx, topic, seen, usedLeadIns);
       utterances.push(u);
       totalMs += u.nominalMs;
     };
@@ -90,6 +110,7 @@ export class SpeechEngine {
       product,
       tagline,
       speaker,
+      intro,
       utterances,
       totalMs,
     };
@@ -100,6 +121,7 @@ export class SpeechEngine {
     ctx: ExpandContext,
     topic: LexCategory,
     seen: Set<string>,
+    usedLeadIns: Set<string>,
   ): Utterance {
     // Keep the product name hidden until the reveal beat.
     const lineCtx: ExpandContext = beatNamesProduct(beat) ? ctx : { ...ctx, product: TEASER };
@@ -114,7 +136,7 @@ export class SpeechEngine {
     }
     seen.add(core);
 
-    const text = this.fixQuantifiers(finalizeSentence(this.applyLeadIn(beat, ctx, core)));
+    const text = this.fixQuantifiers(finalizeSentence(this.applyLeadIn(beat, ctx, core, usedLeadIns)));
     const words = text.split(/\s+/).filter(Boolean);
     const commas = (text.match(/,/g) ?? []).length;
     const nominalMs = words.length * MS_PER_WORD + SENTENCE_PAUSE_MS + commas * COMMA_PAUSE_MS;
@@ -139,27 +161,41 @@ export class SpeechEngine {
   }
 
   /** Occasionally prefix a body sentence with a transition or discourse marker. */
-  private applyLeadIn(beat: Beat, ctx: ExpandContext, core: string): string {
+  private applyLeadIn(beat: Beat, ctx: ExpandContext, core: string, usedLeadIns: Set<string>): string {
     const bodyBeat = beat === "feature" || beat === "metric" || beat === "vision";
     if (!bodyBeat) return core;
     const { rng, rhetoric } = ctx;
 
-    let connector: string | null = null;
-    if (rng.chance(0.22) && rhetoric.transitions.length > 0) {
-      connector = expand(rng.pick(rhetoric.transitions), ctx).trim();
-    } else if (rng.chance(0.15) && rhetoric.discourseMarkers.length > 0) {
-      connector = expand(rng.pick(rhetoric.discourseMarkers), ctx).trim();
-    }
-    if (!connector) return core;
+    const pool =
+      rng.chance(0.22) && rhetoric.transitions.length > 0
+        ? rhetoric.transitions
+        : rng.chance(0.15) && rhetoric.discourseMarkers.length > 0
+          ? rhetoric.discourseMarkers
+          : null;
+    if (!pool) return core;
 
-    // A connector that is already a full sentence stands on its own. A fragment
-    // flows into the core, joined by a space after a conjunction ("...because x")
-    // or a comma otherwise ("Here's the thing, x").
+    // Prefer a connector not yet used in this scene, to limit transition repeats.
+    let connector = "";
+    for (let attempt = 0; attempt < 5; attempt++) {
+      connector = expand(rng.pick(pool), ctx).trim();
+      if (!usedLeadIns.has(connector)) break;
+    }
+    if (usedLeadIns.has(connector)) return core; // pool exhausted; skip the lead-in
+    usedLeadIns.add(connector);
+
+    // Keep a proper-noun-initial core (a product/company name) capitalized.
+    const startsName = core.startsWith(ctx.product) || core.startsWith(ctx.company);
+    const tail = startsName ? core : lowerFirst(core);
+
+    // A connector that is already a full sentence stands on its own. One ending in
+    // a colon or semicolon keeps it. A bare fragment flows into the core, joined by
+    // a space after a conjunction ("...because x") or a comma otherwise.
     if (/[.!?…]$/.test(connector)) return `${capitalize(connector)} ${core}`;
-    const trimmed = connector.replace(/[,;:]+$/, "");
+    if (/[:;]$/.test(connector)) return `${capitalize(connector)} ${tail}`;
+    const trimmed = connector.replace(/,+$/, "");
     const lastWord = (/([A-Za-z']+)$/.exec(trimmed)?.[1] ?? "").toLowerCase();
     const sep = FLOW_WORDS.has(lastWord) ? " " : ", ";
-    return `${capitalize(trimmed)}${sep}${lowerFirst(core)}`;
+    return `${capitalize(trimmed)}${sep}${tail}`;
   }
 }
 
@@ -178,10 +214,9 @@ const FLOW_WORDS = new Set([
   "while",
   "which",
   "where",
-  "to",
-  "of",
-  "for",
-  "is",
+  "unless",
+  "until",
+  "though",
 ]);
 
 function finalizeSentence(input: string): string {

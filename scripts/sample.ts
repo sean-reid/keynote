@@ -12,6 +12,9 @@ const sceneCount = Number(process.argv[2] ?? 8);
 const seed = process.argv[3] ?? "demo";
 const printReadable = sceneCount <= 25;
 
+// Scene target length in minutes (default short, for readable/fast audits).
+const targetMs = Number(process.argv[4] ?? 2) * 60_000;
+
 const corpus = loadCorpusFromDisk();
 const engine = new SpeechEngine(corpus, seed);
 
@@ -26,10 +29,13 @@ let sentenceCount = 0;
 let wordCount = 0;
 
 function check(scene: Scene): void {
+  const inScene = new Set<string>();
   for (const u of scene.utterances) {
     sentenceCount++;
     wordCount += u.words.length;
     const t = u.text;
+    if (inScene.has(t)) issues.push({ kind: "repeat-in-scene", scene: scene.index, text: t });
+    inScene.add(t);
     if (/#\w+#/.test(t)) issues.push({ kind: "unresolved-slot", scene: scene.index, text: t });
     for (const m of t.matchAll(/\b(a|an)\s+(["']?[A-Za-z][\w-]*)/gi)) {
       if (m[1] && m[2] && m[1].toLowerCase() !== articleFor(m[2])) {
@@ -47,7 +53,7 @@ function check(scene: Scene): void {
 }
 
 for (let i = 0; i < sceneCount; i++) {
-  const scene = engine.generateScene(i);
+  const scene = engine.generateScene(i, targetMs);
   check(scene);
   if (printReadable) {
     process.stdout.write(
@@ -55,6 +61,7 @@ for (let i = 0; i < sceneCount; i++) {
         `speaker: ${scene.speaker.name}, ${scene.speaker.title}\n` +
         `product: ${scene.product}  |  tagline: ${scene.tagline}\n${"-".repeat(72)}\n`,
     );
+    process.stdout.write(`[ANNOUNCER] ${scene.intro.text}\n[applause]\n`);
     process.stdout.write(scene.utterances.map((u) => u.text).join(" ") + "\n");
   }
 }

@@ -1,6 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { SpeechEngine } from "../../src/grammar/engine.ts";
-import { SCENE_MS } from "../../src/grammar/config.ts";
 import type { Corpus } from "../../src/grammar/types.ts";
 import { loadCorpusFromDisk } from "../helpers/corpus.ts";
 
@@ -75,9 +74,18 @@ describe("SpeechEngine", () => {
   });
 
   it("fills roughly the target scene duration", () => {
-    const scene = new SpeechEngine(corpus, "duration").generateScene(1);
-    expect(scene.totalMs).toBeGreaterThan(SCENE_MS * 0.7);
-    expect(scene.totalMs).toBeLessThan(SCENE_MS * 1.3);
+    const target = 120_000;
+    const scene = new SpeechEngine(corpus, "duration").generateScene(1, target);
+    expect(scene.totalMs).toBeGreaterThan(target * 0.7);
+    expect(scene.totalMs).toBeLessThan(target * 1.3);
+  });
+
+  it("introduces the speaker with an announcer line naming them and the company", () => {
+    const scene = new SpeechEngine(corpus, "intro").generateScene(5);
+    expect(scene.intro.text).toContain(scene.speaker.name);
+    expect(scene.intro.text).toContain(scene.company);
+    expect(scene.intro.text).not.toMatch(/#\w+#/);
+    expect(scene.intro.nominalMs).toBeGreaterThan(0);
   });
 
   it("assigns each scene a presenter with a name and title", () => {

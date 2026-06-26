@@ -4,6 +4,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import type {
+  Announcer,
   Branding,
   Corpus,
   LexCategory,
@@ -40,5 +41,6 @@ export function loadCorpusFromDisk(): Corpus {
     rhetoric,
     presenters: readJson<Presenters>(join(dataDir, "presenters.json")),
     branding: readJson<Branding>(join(dataDir, "branding.json")),
+    announcer: readJson<Announcer>(join(dataDir, "announcer.json")),
   };
 }

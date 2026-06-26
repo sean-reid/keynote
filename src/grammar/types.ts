@@ -55,12 +55,18 @@ export interface Branding {
   productConnectors: string[];
 }
 
+/** Announcer introduction templates (data/announcer.json). */
+export interface Announcer {
+  introductions: string[];
+}
+
 /** Everything the engine needs: themed domains, rhetoric, presenters, branding. */
 export interface Corpus {
   domains: LexCategory[];
   rhetoric: RhetoricCategory;
   presenters: Presenters;
   branding: Branding;
+  announcer: Announcer;
 }
 
 /** A keynote moves through these beats; each scene is one pass through an arc. */
@@ -95,6 +101,13 @@ export interface Speaker {
   persona: number;
 }
 
+/** The off-camera announcer's introduction of a speaker, in a fixed announcer voice. */
+export interface Announcement {
+  text: string;
+  words: string[];
+  nominalMs: number;
+}
+
 /** A self-contained coherent block: one company, one product, one topic arc. */
 export interface Scene {
   index: number;
@@ -104,6 +117,7 @@ export interface Scene {
   product: string;
   tagline: string;
   speaker: Speaker;
+  intro: Announcement;
   utterances: Utterance[];
   totalMs: number;
 }

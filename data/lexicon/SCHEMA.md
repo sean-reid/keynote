@@ -34,7 +34,26 @@ Every file MUST follow this exact shape so the grammar engine can merge them.
 
 ## Slot syntax for sentenceTemplates and cliches
 Use `#slot#` placeholders the grammar will fill. Available slots:
-`#noun#` `#nounPlural#` `#adjective#` `#verb#` `#verbing#` `#buzzphrase#`
-`#metric#` `#product#` `#company#` `#audience#`
+`#noun#` `#nounPlural#` `#adjective#` `#verb#` `#verbs#` `#verbing#` `#buzzphrase#`
+`#metric#` `#figure#` `#product#` `#company#` `#audience#`
+
+- `#verb#` is a base verb ("we #verb# the #noun#" -> "we orchestrate the platform").
+- `#verbs#` is third-person singular; use it after a singular subject
+  ("a #noun# that #verbs# itself" -> "a platform that scales itself").
+- `#verbing#` is the -ing form ("we're #verbing# the #noun#").
+- `#figure#` / `#metric#` resolve to a quantity ("10x", "40%", "sub-second").
+
 Example: "We're not just building #nounPlural#, we're #verbing# an entirely #adjective# #noun#."
 Keep templates domain-flavored; the slots draw from this file's own lists plus shared lists.
+
+## Patterns to AVOID in templates (they generate nonsense)
+- Do NOT put `#metric#`/`#figure#` directly before a noun or adjective:
+  bad: "#figure# more capital-efficient", "delivers #figure# productivity gains",
+  "at #figure# scale", "#figure# fewer #nounPlural#". A figure must stand alone
+  as its own clause ("#figure#. That changes everything.") or follow "by".
+- Do NOT use a noun where a verb belongs. Use `#verbs#`/`#verb#`, never a bare
+  `#noun#`, in a verb position ("a #noun# that #verbs# itself", NOT "that #noun# itself").
+- Do NOT sell attacks/failures as benefits ("reinventing the breach", "embrace
+  the exploit"). Keep product claims positive.
+- `verbs` entries must be transitive base-form verbs only (no nouns, no
+  intransitive-only verbs like "obsess"/"respond", no multiword phrases).
