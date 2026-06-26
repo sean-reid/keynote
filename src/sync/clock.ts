@@ -54,6 +54,32 @@ function hash32(n: number): number {
   return (x ^ (x >>> 15)) >>> 0;
 }
 
+/** Deterministic speaking length (ms) of the keynote at a scene index (8-12 min).
+ * The audio pipeline uses this as each scene's budget so audio fits its unit. */
+export function speakingMsForScene(index: number): number {
+  return SPEAKING_MIN_MS + (hash32(index) % SPEAKING_SPAN);
+}
+
+/** Deterministic total unit length (ms): intro + applause + keynote + applause. */
+export function unitMsForScene(index: number): number {
+  return FIXED_MS + speakingMsForScene(index);
+}
+
+/** The scene index live at a given instant (walks variable-length units). */
+export function sceneIndexAtTime(nowMs: number): number {
+  let index = 0;
+  let start = EPOCH_MS;
+  while (start > nowMs) {
+    index -= 1;
+    start -= unitMsForScene(index);
+  }
+  while (start + unitMsForScene(index) <= nowMs) {
+    start += unitMsForScene(index);
+    index += 1;
+  }
+  return index;
+}
+
 export class SceneClock {
   private readonly engine: SpeechEngine;
   private cacheIndex = -1;
@@ -69,12 +95,12 @@ export class SceneClock {
 
   /** Speaking length (ms) of the keynote at the given scene index. */
   speakingMsAt(index: number): number {
-    return SPEAKING_MIN_MS + (hash32(index) % SPEAKING_SPAN);
+    return speakingMsForScene(index);
   }
 
   /** Total length (ms) of a scene's unit: intro + applause + keynote + applause. */
   unitMsAt(index: number): number {
-    return FIXED_MS + this.speakingMsAt(index);
+    return unitMsForScene(index);
   }
 
   /** The scene index live at the given instant, with its unit start time. */
