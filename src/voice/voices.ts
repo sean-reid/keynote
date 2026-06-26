@@ -6,12 +6,13 @@
 import type { VoiceId } from "@diffusionstudio/vits-web";
 import type { SpeakOptions } from "./types.ts";
 
-const FEMALE: VoiceId[] = ["en_US-amy-medium", "en_US-hfc_female-medium"];
-const MALE: VoiceId[] = ["en_US-ryan-medium", "en_US-hfc_male-medium"];
+// High-quality voices where a "-high" model exists; otherwise the best medium.
+const FEMALE: VoiceId[] = ["en_US-lessac-high", "en_US-ljspeech-high"];
+const MALE: VoiceId[] = ["en_US-ryan-high", "en_US-hfc_male-medium"];
 const ANNOUNCER: VoiceId = "en_GB-northern_english_male-medium";
 
 /** The voice warmed up first (also a speaker voice). */
-export const PIPER_DEFAULT: VoiceId = "en_US-ryan-medium";
+export const PIPER_DEFAULT: VoiceId = "en_US-ryan-high";
 
 /** Every voice the broadcast can use, for background prefetching. */
 export const PIPER_VOICES: VoiceId[] = [...new Set([...FEMALE, ...MALE, ANNOUNCER])];
