@@ -9,6 +9,16 @@ import { VoiceEngine } from "./voice/index.ts";
 const app = document.querySelector<HTMLDivElement>("#app");
 if (!app) throw new Error("missing #app");
 
+// The in-browser speech model (kokoro/onnxruntime) can emit background rejections
+// on some browsers even though we fall back cleanly. Keep them out of the console.
+window.addEventListener("unhandledrejection", (event) => {
+  const detail = `${String(event.reason?.message ?? event.reason ?? "")}${String(event.reason?.stack ?? "")}`;
+  if (/kokoro|onnx|ort-wasm|webgpu|wasm/i.test(detail)) {
+    console.warn("[voice] suppressed a background error from the speech engine");
+    event.preventDefault();
+  }
+});
+
 const corpus = loadCorpus();
 const clock = new SceneClock(corpus);
 const view = createBroadcast(app);
@@ -47,6 +57,8 @@ let sceneIdx = -1;
 let playhead = 0;
 let speaking = false;
 let spokenText = "";
+let speakStart = 0;
+const MAX_SPEAK_MS = 25_000;
 
 function tick(): void {
   const now = syncedNow();
@@ -73,9 +85,16 @@ function tick(): void {
 
   view.update({ ...cs, line, utteranceIndex: playhead }, viewerCount(now, cs.sceneIndex), now);
 
+  // Watchdog: if a phrase never reports completion, recover so audio continues.
+  if (speaking && Date.now() - speakStart > MAX_SPEAK_MS) {
+    voice.cancel();
+    speaking = false;
+  }
+
   if (voice.enabled && !muted && line && !speaking && line.text !== spokenText) {
     spokenText = line.text;
     speaking = true;
+    speakStart = Date.now();
     const speakingPhase = cs.phase === "speaking";
     voice.speak(
       line.text,

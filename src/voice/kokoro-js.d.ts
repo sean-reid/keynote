@@ -5,10 +5,19 @@ declare module "kokoro-js" {
     audio: Float32Array;
     sampling_rate: number;
   }
+  export interface ProgressEvent {
+    status?: string;
+    progress?: number;
+    file?: string;
+  }
   export class KokoroTTS {
     static from_pretrained(
       model: string,
-      options?: { dtype?: string; device?: string },
+      options?: {
+        dtype?: string;
+        device?: string;
+        progress_callback?: (event: ProgressEvent) => void;
+      },
     ): Promise<KokoroTTS>;
     generate(text: string, options?: { voice?: string }): Promise<RawAudio>;
   }

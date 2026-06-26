@@ -23,16 +23,16 @@ export class VoiceEngine {
     this.enabled = true;
     this.web.enable();
     if (NeuralVoice.supported()) {
+      this.neural.unlock(); // create/resume AudioContext inside the gesture
       void this.neural.load().then((ok) => {
         this.neuralReady = ok;
-        if (ok) void this.neural.resume();
       });
     }
   }
 
-  /** True once the upgraded neural voice is active. */
+  /** True once the upgraded neural voice is active and healthy. */
   get usingNeural(): boolean {
-    return this.neuralReady && this.neural.ready;
+    return this.neuralReady && this.neural.ready && this.neural.healthy;
   }
 
   speak(text: string, opts: SpeakOptions, onEnd?: () => void): void {
