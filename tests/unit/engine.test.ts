@@ -120,10 +120,13 @@ describe("SpeechEngine", () => {
     }
   });
 
-  it("drifts topics across many scenes", () => {
+  it("changes topic every scene and covers many domains", () => {
     const engine = new SpeechEngine(corpus, "drift");
-    const topics = new Set<string>();
-    for (let i = 0; i < 60; i++) topics.add(engine.generateScene(i).topic);
-    expect(topics.size).toBeGreaterThan(3);
+    const topics: string[] = [];
+    for (let i = 0; i < 60; i++) topics.push(engine.generateScene(i, 60_000).topic);
+    expect(new Set(topics).size).toBeGreaterThan(6);
+    for (let i = 1; i < topics.length; i++) {
+      expect(topics[i], `scene ${i}`).not.toBe(topics[i - 1]);
+    }
   });
 });

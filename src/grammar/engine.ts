@@ -28,9 +28,10 @@ export class SpeechEngine {
   private readonly presenters: Presenters;
   private readonly branding: Branding;
   private readonly announcer: Announcer;
-  private readonly weights: number[];
   private readonly seed: string;
   private readonly quantified: RegExp;
+  private readonly topicOrder: number[];
+  private readonly topicStride: number;
 
   constructor(corpus: Corpus, seed: string) {
     if (corpus.domains.length === 0) throw new Error("Corpus has no domains");
@@ -40,21 +41,31 @@ export class SpeechEngine {
     this.presenters = corpus.presenters;
     this.branding = corpus.branding;
     this.announcer = corpus.announcer;
-    this.weights = this.domains.map((d) => (d.weight > 0 ? d.weight : 1));
+
+    // A shuffled domain order walked by a coprime stride: consecutive scenes
+    // always land on different topics, and every topic is visited each lap.
+    const n = this.domains.length;
+    const orderRng = new Rng(`${seed}|order`);
+    this.topicOrder = this.domains.map((_, i) => i);
+    for (let i = n - 1; i > 0; i--) {
+      const j = orderRng.int(i + 1);
+      const tmp = this.topicOrder[i] as number;
+      this.topicOrder[i] = this.topicOrder[j] as number;
+      this.topicOrder[j] = tmp;
+    }
+    this.topicStride = n > 1 ? 1 + orderRng.int(n - 1) : 1;
     // Singularize a plural audience noun after a singular quantifier
     // ("every builders" -> "every builder").
     const aud = this.rhetoric.audience.join("|");
     this.quantified = new RegExp(`\\b(every|each|either|neither|a|an|one|single|this|that)\\s+(${aud})\\b`, "gi");
   }
 
-  /** Topic for a scene, with a little stickiness to the previous scene. */
+  /** Topic for a scene. Consecutive scenes never share a topic, so the broadcast
+   * keeps moving across domains rather than dwelling on one. */
   private topicIndex(sceneIndex: number): number {
-    const base = (s: number): number =>
-      new Rng(`${this.seed}|topic|${s}`).weightedIndex(this.weights);
-    if (sceneIndex > 0 && new Rng(`${this.seed}|drift|${sceneIndex}`).chance(0.34)) {
-      return base(sceneIndex - 1);
-    }
-    return base(sceneIndex);
+    const n = this.domains.length;
+    const pos = (((sceneIndex * this.topicStride) % n) + n) % n;
+    return this.topicOrder[pos] as number;
   }
 
   /** Build the full scene at the given index. */
