@@ -46,7 +46,7 @@ jobs:
 
       - name: Install Piper
         run: |
-          curl -sL https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_amd64.tar.gz | tar xz
+          curl -fsSL https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_linux_x86_64.tar.gz | tar xz
           echo "PIPER_BIN=$PWD/piper/piper" >> "$GITHUB_ENV"
           echo "LD_LIBRARY_PATH=$PWD/piper:$LD_LIBRARY_PATH" >> "$GITHUB_ENV"
           echo "PIPER_MODELS=$PWD/data/.piper-models" >> "$GITHUB_ENV"
