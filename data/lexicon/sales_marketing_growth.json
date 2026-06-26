@@ -1,7 +1,7 @@
 {
   "category": "sales_marketing_growth",
   "label": "Sales, Marketing & Growth",
-  "weight": 1.0,
+  "weight": 1,
   "nouns": [
     "funnel",
     "flywheel",
@@ -209,12 +209,10 @@
     "prospect",
     "close",
     "upsell",
-    "cross-sell",
     "retarget",
     "retain",
     "activate",
     "onboard",
-    "scale",
     "accelerate",
     "optimize",
     "personalize",
@@ -240,15 +238,9 @@
     "disrupt",
     "unlock",
     "supercharge",
-    "10x",
     "funnel",
-    "warm up",
-    "double down",
-    "lean in",
     "ramp",
-    "incentivize",
-    "operationalize the funnel",
-    "move the needle"
+    "incentivize"
   ],
   "buzzphrases": [
     "land and expand",

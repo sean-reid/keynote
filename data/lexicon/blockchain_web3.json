@@ -258,7 +258,6 @@
     "incentivize",
     "align",
     "onboard",
-    "self-custody",
     "verify",
     "validate",
     "settle",
@@ -266,7 +265,6 @@
     "execute",
     "compose",
     "interoperate",
-    "scale",
     "shard",
     "audit",
     "deploy",
@@ -276,16 +274,12 @@
     "govern",
     "ratify",
     "disintermediate",
-    "trustlessly transact",
     "unlock",
-    "permissionlessly access",
     "hodl",
-    "ape into",
     "shill",
     "degen",
     "rug",
-    "moon",
-    "abstract away"
+    "moon"
   ],
   "buzzphrases": [
     "ownership economy",

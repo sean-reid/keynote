@@ -1,7 +1,7 @@
 {
   "category": "emerging_tech",
   "label": "Emerging Tech",
-  "weight": 1.0,
+  "weight": 1,
   "nouns": [
     "qubit",
     "logical qubit",
@@ -196,8 +196,6 @@
     "entangle",
     "decohere",
     "superpose",
-    "error-correct",
-    "scale",
     "harness",
     "unlock",
     "unleash",
@@ -234,9 +232,7 @@
     "converge",
     "operationalize",
     "miniaturize",
-    "bootstrap",
-    "self-organize",
-    "self-heal"
+    "bootstrap"
   ],
   "buzzphrases": [
     "quantum advantage",

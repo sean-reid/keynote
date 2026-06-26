@@ -218,7 +218,6 @@
     "democratize",
     "operationalize",
     "productionize",
-    "fine-tune",
     "pretrain",
     "train",
     "infer",
@@ -230,7 +229,6 @@
     "retrieve",
     "ground",
     "align",
-    "scale",
     "deploy",
     "ship",
     "iterate",
@@ -239,7 +237,6 @@
     "quantize",
     "benchmark",
     "evaluate",
-    "fine-grain",
     "personalize",
     "contextualize",
     "vectorize",
@@ -254,10 +251,8 @@
     "transform",
     "empower",
     "disrupt",
-    "leverage",
     "harness",
-    "unleash",
-    "future-proof"
+    "unleash"
   ],
   "buzzphrases": [
     "agentic enterprise",

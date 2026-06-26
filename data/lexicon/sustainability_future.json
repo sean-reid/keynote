@@ -1,7 +1,7 @@
 {
   "category": "sustainability_future",
   "label": "Sustainability & Future of Work",
-  "weight": 1.0,
+  "weight": 1,
   "nouns": [
     "sustainability",
     "net zero",
@@ -118,7 +118,6 @@
     "career cushioning",
     "microshifting",
     "boreout",
-    "resenteeism",
     "augmented workforce",
     "human-AI collaboration",
     "stakeholder",
@@ -214,7 +213,6 @@
     "reimagine",
     "rethink",
     "reframe",
-    "future-proof",
     "empower",
     "uplift",
     "elevate",
@@ -222,7 +220,6 @@
     "unleash",
     "catalyze",
     "accelerate",
-    "scale",
     "embed",
     "operationalize",
     "mainstream",
@@ -231,7 +228,6 @@
     "nurture",
     "cultivate",
     "foster",
-    "co-create",
     "convene",
     "align",
     "galvanize",
@@ -252,8 +248,7 @@
     "pledge",
     "deliver",
     "embrace",
-    "rewild",
-    "future-fit"
+    "rewild"
   ],
   "buzzphrases": [
     "net zero",

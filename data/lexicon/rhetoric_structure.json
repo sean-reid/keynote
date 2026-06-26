@@ -219,7 +219,6 @@
     "rebuild",
     "deliver",
     "ship",
-    "scale",
     "evolve",
     "advance",
     "push",
@@ -233,12 +232,7 @@
     "lead",
     "guide",
     "connect",
-    "bridge",
-    "bring together",
-    "set free",
-    "raise the bar",
-    "move the needle",
-    "change everything"
+    "bridge"
   ],
   "buzzphrases": [
     "paradigm shift",
@@ -968,5 +962,24 @@
     "the story I started with",
     "that one idea from the top of the talk",
     "the future, made real"
+  ],
+  "audience": [
+    "builders",
+    "operators",
+    "leaders",
+    "founders",
+    "dreamers",
+    "innovators",
+    "developers",
+    "engineers",
+    "teams"
+  ],
+  "metricTemplates": [
+    "And the numbers speak for themselves: #figure#. That is #product# in production today.",
+    "We measured it ourselves, and the result was not subtle: #figure#.",
+    "#figure#. That is not a projection. That is what #product# is doing right now.",
+    "Here is the number that keeps me up at night, in the best way: #figure#.",
+    "The early data is staggering. #figure#, and the curve is still bending.",
+    "Let me put a number on it. #figure#. Let that sink in."
   ]
 }

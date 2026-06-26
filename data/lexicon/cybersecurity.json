@@ -1,7 +1,7 @@
 {
   "category": "cybersecurity",
   "label": "Cybersecurity",
-  "weight": 1.0,
+  "weight": 1,
   "nouns": [
     "zero trust",
     "threat intelligence",
@@ -247,7 +247,6 @@
     "rotate",
     "provision",
     "deprovision",
-    "shift left",
     "exploit",
     "exfiltrate",
     "breach",
@@ -255,7 +254,6 @@
     "weaponize",
     "anticipate",
     "preempt",
-    "future-proof",
     "secure"
   ],
   "buzzphrases": [

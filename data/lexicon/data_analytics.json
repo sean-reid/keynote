@@ -1,7 +1,7 @@
 {
   "category": "data_analytics",
   "label": "Data & Analytics",
-  "weight": 1.0,
+  "weight": 1,
   "nouns": [
     "data lake",
     "data warehouse",
@@ -240,12 +240,10 @@
     "virtualize",
     "stream",
     "process",
-    "scale",
     "accelerate",
     "empower",
     "activate",
     "harness",
-    "leverage",
     "contextualize",
     "operationalise",
     "embed",
@@ -253,10 +251,7 @@
     "index",
     "query",
     "visualize",
-    "drill down",
-    "future-proof",
-    "modernize",
-    "future-proofing"
+    "modernize"
   ],
   "buzzphrases": [
     "data-driven decision making",

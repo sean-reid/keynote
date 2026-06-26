@@ -1,7 +1,7 @@
 {
   "category": "product_ux",
   "label": "Product & UX",
-  "weight": 1.0,
+  "weight": 1,
   "nouns": [
     "product",
     "roadmap",
@@ -219,7 +219,6 @@
     "ship",
     "prototype",
     "wireframe",
-    "ideate",
     "prioritize",
     "deprioritize",
     "groom",
@@ -243,19 +242,13 @@
     "map",
     "streamline",
     "simplify",
-    "frictionlessly-deliver",
-    "delight-the-user",
     "operationalize",
     "productize",
     "humanize",
-    "de-risk",
-    "double-down",
-    "fast-follow",
     "dogfood",
     "evangelize",
     "champion",
     "nurture",
-    "co-create",
     "unlock"
   ],
   "buzzphrases": [
