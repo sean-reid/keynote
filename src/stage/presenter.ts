@@ -159,9 +159,11 @@ export class Presenter {
     let target = 0;
     if (this.state.speaking) {
       const lvl = this.level();
-      target = lvl < 0 ? talkEnvelope(this.t) : clamp01(lvl * 2.8);
+      // level() now returns a gated 0..1 speech-band openness; a small boost makes
+      // ordinary speech open the mouth clearly. Muted falls back to the rhythm.
+      target = lvl < 0 ? talkEnvelope(this.t) : clamp01(lvl * 1.25);
     }
-    const rate = target > this.mouth ? 60 : 24;
+    const rate = target > this.mouth ? 70 : 30;
     this.mouth += (target - this.mouth) * Math.min(1, dt * rate);
 
     // Blink.

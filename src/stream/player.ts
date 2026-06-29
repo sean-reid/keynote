@@ -150,16 +150,21 @@ export class StreamPlayer {
     const analyser = this.analyser;
     const data = this.levelData;
     if (!analyser || !data) return -1; // no audio graph yet (muted): use procedural
-    analyser.getByteTimeDomainData(data);
+    analyser.getByteFrequencyData(data);
+    // Energy in the speech formant band (~190Hz..3.4kHz). Tracking voiced energy
+    // rather than raw loudness makes the mouth open on vowels and close in the
+    // gaps between words, instead of flapping with overall volume.
+    const lo = 4;
+    const hi = Math.min(72, data.length);
     let sum = 0;
-    for (let i = 0; i < data.length; i++) {
-      const v = (data[i]! - 128) / 128;
-      sum += v * v;
-    }
-    const rms = Math.sqrt(sum / data.length);
-    // Instant attack, eased release: track the voice tightly without flicker or
-    // lag (smoothing the rise is what made the mouth trail the audio).
-    this.smoothedLevel = rms > this.smoothedLevel ? rms : this.smoothedLevel + (rms - this.smoothedLevel) * 0.5;
+    for (let i = lo; i < hi; i++) sum += data[i]!;
+    let v = sum / ((hi - lo) * 255); // 0..1 average band energy
+    v = v < 0.05 ? 0 : Math.min(1, (v - 0.05) * 2.6); // noise gate + gain
+    v = Math.pow(v, 0.85);
+    // Fast attack so it pops open on a syllable; quicker release so it closes
+    // between words rather than staying blobbily open.
+    const k = v > this.smoothedLevel ? 0.7 : 0.4;
+    this.smoothedLevel += (v - this.smoothedLevel) * k;
     return this.smoothedLevel;
   }
 
@@ -176,12 +181,13 @@ export class StreamPlayer {
       const ctx = new Ctx();
       const source = ctx.createMediaElementSource(this.audio);
       const analyser = ctx.createAnalyser();
-      analyser.fftSize = 256;
+      analyser.fftSize = 1024; // finer bins for the speech-band lip-sync
+      analyser.smoothingTimeConstant = 0.1; // minimal, so the mouth stays responsive
       source.connect(analyser);
       analyser.connect(ctx.destination);
       this.audioCtx = ctx;
       this.analyser = analyser;
-      this.levelData = new Uint8Array(new ArrayBuffer(analyser.fftSize));
+      this.levelData = new Uint8Array(new ArrayBuffer(analyser.frequencyBinCount));
       void ctx.resume().catch(() => undefined);
     } catch {
       // Web Audio unavailable, or the element is already captured; lip-sync
