@@ -38,6 +38,9 @@ const F_TO_VES = new Set([
 /** Pluralize a noun. Multiword nouns are pluralized on their head (last word). */
 export function pluralize(word: string): string {
   const trimmed = word.trim();
+  // "X of Y" pluralizes on the head ("points of view", "mixtures of experts").
+  const of = /\s+of\s+/i.exec(trimmed);
+  if (of && of.index > 0) return pluralize(trimmed.slice(0, of.index)) + trimmed.slice(of.index);
   const space = trimmed.lastIndexOf(" ");
   if (space >= 0) return trimmed.slice(0, space + 1) + pluralize(trimmed.slice(space + 1));
 
@@ -53,6 +56,17 @@ export function pluralize(word: string): string {
   if (/[^aeiou]y$/i.test(trimmed)) return trimmed.slice(0, -1) + "ies";
   if (/[^aeiou]o$/i.test(trimmed)) return trimmed + "es";
   return trimmed + "s";
+}
+
+/** Singularize a plural noun (best-effort), e.g. "every builders" -> "every builder",
+ * "every visionaries" -> "every visionary". */
+export function singularize(word: string): string {
+  const w = word.trim();
+  if (/[^aeiou]ies$/i.test(w)) return w.slice(0, -3) + "y";
+  if (/(ss|us|is|sis)$/i.test(w)) return w;
+  if (/(s|x|z|ch|sh)es$/i.test(w)) return w.slice(0, -2);
+  if (/s$/i.test(w)) return w.slice(0, -1);
+  return w;
 }
 
 // Multi-syllable verbs stressed on the last syllable double their final consonant

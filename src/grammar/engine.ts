@@ -4,7 +4,7 @@
 
 import { BODY_BEATS, INTRO_BEATS, OUTRO_BEATS, beatNamesProduct, beatPool } from "./beats.ts";
 import { COMMA_PAUSE_MS, MS_PER_WORD, SENTENCE_PAUSE_MS, SPEAKING_MS } from "./config.ts";
-import { capitalize, collapseDuplicateWords, correctArticles, lowerFirst } from "./inflect.ts";
+import { capitalize, collapseDuplicateWords, correctArticles, lowerFirst, singularize } from "./inflect.ts";
 import { coinCompany, coinIntroduction, coinProduct, coinSpeaker, coinTagline } from "./names.ts";
 import { Rng } from "./rng.ts";
 import { expand, type ExpandContext } from "./template.ts";
@@ -164,7 +164,7 @@ export class SpeechEngine {
   }
 
   private fixQuantifiers(text: string): string {
-    return text.replace(this.quantified, (_m, det: string, word: string) => `${det} ${word.slice(0, -1)}`);
+    return text.replace(this.quantified, (_m, det: string, word: string) => `${det} ${singularize(word)}`);
   }
 
   private pickLine(beat: Beat, topic: LexCategory, ctx: ExpandContext): string {
