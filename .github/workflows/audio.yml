@@ -82,13 +82,6 @@ jobs:
       - name: Generate scenes ${{ matrix.from }}-${{ matrix.to }}
         run: node scripts/precompute/index.ts --from ${{ matrix.from }} --to ${{ matrix.to }} --out audio-out
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: audio-${{ matrix.from }}-${{ matrix.to }}
-          path: audio-out
-          retention-days: 3
-
       - name: Publish to R2
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
