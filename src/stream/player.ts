@@ -8,6 +8,7 @@
 
 import { locateScene } from "../sync/clock.ts";
 import type { AudioSegment, BroadcastIndex, SceneManifest } from "../audio/manifest.ts";
+import { MouthTracker } from "./lipsync.ts";
 
 const AUDIO_BASE = "/audio";
 // Re-seek only on a large desync (late join, throttled tab). A tight tolerance
@@ -21,6 +22,9 @@ const PREFETCH_LEAD_MS = 45_000; // warm the next scene this long before it star
 const CATALOG_TTL_MS = 30_000; // how often to re-check the available window
 const KEEP_BEHIND = 2; // manifests to retain on each side of the live scene
 const KEEP_AHEAD = 4;
+// Speech formant band analysed for lip-sync.
+const SPEECH_LO_HZ = 190;
+const SPEECH_HI_HZ = 3400;
 
 export type StreamPhase = "intro" | "speaking" | "applause";
 
@@ -109,8 +113,11 @@ export class StreamPlayer {
   // Web Audio analysis for lip-sync, wired up on the first unmute gesture.
   private audioCtx: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
-  private levelData: Uint8Array<ArrayBuffer> | null = null;
-  private smoothedLevel = 0;
+  private spectrum: Float32Array<ArrayBuffer> | null = null;
+  private bandLo = 0;
+  private bandHi = 0;
+  private readonly mouth = new MouthTracker();
+  private lastLevelAt = 0;
 
   constructor() {
     const audio = new Audio();
@@ -144,28 +151,21 @@ export class StreamPlayer {
     this.audio.muted = true;
   }
 
-  /** Output level in 0..1 for lip-sync, sampled at render rate. Returns 0 when
-   * there is no analyser yet (muted) so callers fall back to a procedural mouth. */
+  /** Mouth openness in 0..1 for lip-sync, sampled at render rate. Returns -1
+   * when there is no analyser yet (muted) so callers fall back to a procedural
+   * mouth. */
   level(): number {
     const analyser = this.analyser;
-    const data = this.levelData;
-    if (!analyser || !data) return -1; // no audio graph yet (muted): use procedural
-    analyser.getByteFrequencyData(data);
-    // Energy in the speech formant band (~190Hz..3.4kHz). Tracking voiced energy
-    // rather than raw loudness makes the mouth open on vowels and close in the
-    // gaps between words, instead of flapping with overall volume.
-    const lo = 4;
-    const hi = Math.min(72, data.length);
-    let sum = 0;
-    for (let i = lo; i < hi; i++) sum += data[i]!;
-    let v = sum / ((hi - lo) * 255); // 0..1 average band energy
-    v = v < 0.05 ? 0 : Math.min(1, (v - 0.05) * 2.6); // noise gate + gain
-    v = Math.pow(v, 0.85);
-    // Fast attack so it pops open on a syllable; quicker release so it closes
-    // between words rather than staying blobbily open.
-    const k = v > this.smoothedLevel ? 0.7 : 0.4;
-    this.smoothedLevel += (v - this.smoothedLevel) * k;
-    return this.smoothedLevel;
+    const data = this.spectrum;
+    if (!analyser || !data) return -1;
+    analyser.getFloatFrequencyData(data);
+    let power = 0;
+    for (let i = this.bandLo; i < this.bandHi; i++) power += Math.pow(10, data[i]! / 10);
+    const bandDb = 10 * Math.log10(power / (this.bandHi - this.bandLo) + 1e-12);
+    const now = performance.now();
+    const dt = this.lastLevelAt ? Math.min(0.1, (now - this.lastLevelAt) / 1000) : 0;
+    this.lastLevelAt = now;
+    return this.mouth.update(bandDb, dt);
   }
 
   private enableAnalyser(): void {
@@ -185,9 +185,12 @@ export class StreamPlayer {
       analyser.smoothingTimeConstant = 0.1; // minimal, so the mouth stays responsive
       source.connect(analyser);
       analyser.connect(ctx.destination);
+      const binHz = ctx.sampleRate / analyser.fftSize;
+      this.bandLo = Math.max(1, Math.round(SPEECH_LO_HZ / binHz));
+      this.bandHi = Math.min(analyser.frequencyBinCount, Math.round(SPEECH_HI_HZ / binHz));
       this.audioCtx = ctx;
       this.analyser = analyser;
-      this.levelData = new Uint8Array(new ArrayBuffer(analyser.frequencyBinCount));
+      this.spectrum = new Float32Array(new ArrayBuffer(analyser.frequencyBinCount * 4));
       void ctx.resume().catch(() => undefined);
     } catch {
       // Web Audio unavailable, or the element is already captured; lip-sync
