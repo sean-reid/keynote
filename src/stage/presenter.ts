@@ -152,18 +152,16 @@ export class Presenter {
     this.stageX += (this.stageTargetX - this.stageX) * Math.min(1, dt * 2.2);
     this.stageVel = dt > 0 ? (this.stageX - prevStage) / dt : 0;
 
-    // Mouth: when sound is on, track the real amplitude with a near-instant
+    // Mouth: when sound is on, follow the audio's openness with a near-instant
     // attack so it stays locked to the voice; when muted (level < 0) fall back to
     // a procedural speech rhythm. The procedural envelope is NOT mixed in while
     // audio plays, since its independent timing reads as lip-sync drift.
     let target = 0;
     if (this.state.speaking) {
       const lvl = this.level();
-      // level() now returns a gated 0..1 speech-band openness; a small boost makes
-      // ordinary speech open the mouth clearly. Muted falls back to the rhythm.
-      target = lvl < 0 ? talkEnvelope(this.t) : clamp01(lvl * 1.25);
+      target = lvl < 0 ? talkEnvelope(this.t) : lvl;
     }
-    const rate = target > this.mouth ? 70 : 30;
+    const rate = target > this.mouth ? 70 : 40;
     this.mouth += (target - this.mouth) * Math.min(1, dt * rate);
 
     // Blink.
